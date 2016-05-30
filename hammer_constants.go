@@ -69,3 +69,50 @@ cordons
 	"maxs" "(6592 6592 1024)"
 	"active" "1"
 }`;
+
+const hammer_entity_header string = `
+entity
+{
+	"id" "`;
+
+const hammer_entity_footer string = `
+	"classname" "prop_static"
+	"angles" "0 75 0"
+	"disableselfshadowing" "0"
+	"disableshadows" "0"
+	"disablevertexlighting" "0"
+	"fademaxdist" "0"
+	"fademindist" "-1"
+	"fadescale" "1"
+	"generatelightmaps" "0"
+	"ignorenormals" "0"
+	"lightmapresolutionx" "32"
+	"lightmapresolutiony" "32"
+	"maxdxlevel" "0"
+	"mindxlevel" "0"
+	"model" "models/props_badlands/barrel_flatbed01.mdl"
+	"screenspacefade" "0"
+	"skin" "0"
+	"solid" "0"
+	"origin" "1968 160 512"
+	editor
+	{
+		"color" "255 255 0"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 0]"
+	}
+}`;
+
+const hammer_solid_header string = `
+	solid
+	{
+		"id" "`;
+
+const hammer_solid_footer string = `		editor
+		{
+			"color" "220 30 220"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}`;
