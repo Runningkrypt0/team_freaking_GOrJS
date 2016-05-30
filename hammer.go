@@ -12,11 +12,11 @@ var face_int int = 1000;
 func hammer_print_vector(a *Vector3) string{
 	var buffer bytes.Buffer;
 	buffer.WriteString("(");
-	buffer.WriteString(strconv.Itoa(a.X));
+	buffer.WriteString(strconv.Itoa(int(a.X)));
 	buffer.WriteString(" ");
-	buffer.WriteString(strconv.Itoa(a.Y));
+	buffer.WriteString(strconv.Itoa(int(a.Y)));
 	buffer.WriteString(" ");
-	buffer.WriteString(strconv.Itoa(a.Z));
+	buffer.WriteString(strconv.Itoa(int(a.Z)));
 	buffer.WriteString(")");
 	return buffer.String();
 }
@@ -32,6 +32,7 @@ type hammer_face struct{
 	//add lightmap scales
 	//add smoothing groups (?)
 }
+
 
 func hammer_write_face(file *os.File, face *hammer_face, id int){
 	//write something about the key value pair
@@ -76,7 +77,7 @@ func hammer_fix_solid(solid *hammer_solid){
 		vector_add(&centre,&element.C);
 		count = count + 3;
 	}
-	vector_div_sca(&centre, count);
+	vector_div_sca(&centre, float32(count));
 	
 	for i,element := range solid.Faces {
 		vector_clone(&temp_A,&element.A);

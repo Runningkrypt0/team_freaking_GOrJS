@@ -1,19 +1,44 @@
 package main
 
 import (
+	"math"
 )
 
 type Vector3 struct{
-	X int;
-	Y int;
-	Z int;
+	X float32;
+	Y float32;
+	Z float32;
 };
 
-func vector_div_sca(a *Vector3, b int){
+func vector_div_sca(a *Vector3, b float32){
 	a.X = a.X/b;
 	a.Y = a.Y/b;
 	a.Z = a.Z/b;
 }
+
+func vector_mul_sca(a *Vector3, b float32){
+	a.X = a.X*b;
+	a.Y = a.Y*b;
+	a.Z = a.Z*b;
+}
+
+func vector_normalize(a *Vector3){
+	var distance float32 = a.X*a.X+a.Y*a.Y+a.Z*a.Z;
+	distance = float32(math.Sqrt(float64(distance)));
+	vector_div_sca(a,distance);
+	
+}
+
+func vector_ortho_X(a *Vector3) Vector3{
+	return Vector3{a.X,-a.Z,a.Y};
+}
+func vector_ortho_Y(a *Vector3) Vector3{
+	return Vector3{-a.Z,a.Y,a.X};
+}
+func vector_ortho_Z(a *Vector3) Vector3{
+	return Vector3{-a.Y,a.X,a.Z};
+}
+
 
 func vector_add(a *Vector3, b *Vector3){
 	a.X = a.X + b.X;
@@ -41,7 +66,7 @@ func vector_cross(a *Vector3, b *Vector3) Vector3{
 	return c;
 }
 
-func vector_dot(a *Vector3, b *Vector3) int{
+func vector_dot(a *Vector3, b *Vector3) float32{
 	return a.X*b.X+a.Y*b.Y+a.Z*b.Z;
 }
 
