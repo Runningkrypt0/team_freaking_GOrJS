@@ -129,6 +129,7 @@
 					var state = 0;
 					var focus = 0;
 					var geometry = undefined;
+					var details = [];
 					while(focus<text.length){
 						var tuple = gatherThouhts(text,focus);
 						thought = tuple[0];
@@ -137,13 +138,26 @@
 						if(thought=="O"){
 							
 							console.log("new object");
-							if(geometry!==undefined){
-								geometry.vertices.push(geometry.vertices[0].clone());
-								objects.push(new room_Part());
-								objects[objects.length-1].border = new THREE.Line(geometry);
+							if(state==1){
+								if(geometry!==undefined){
+									geometry.vertices.push(geometry.vertices[0].clone());
+									objects.push(new room_Part());
+									objects[objects.length-1].border = new THREE.Line(geometry);
+									objects[objects.length-1].border.dad = objects[objects.length-1];
+									objects[objects.length-1].height = details[0];
+									objects[objects.length-1].width = details[1];
+									objects[objects.length-1].elevation = geometry.vertices[0].y;
+								}
 							}
 							geometry = new THREE.Geometry();
 							state = 1;
+							var tuple = gatherThouhts(text,focus);
+							var B = tuple[0];
+							focus = tuple[1];
+							var tuple = gatherThouhts(text,focus);
+							var C = tuple[0];
+							focus = tuple[1];
+							details = [parseInt(B),parseInt(C)];
 						}
 						else if(state==1){
 							var tuple = gatherThouhts(text,focus);
@@ -155,12 +169,17 @@
 							geometry.vertices.push(new THREE.Vector3(parseInt(thought),parseInt(B),parseInt(C)));
 						}
 					}
-					if(geometry!==undefined){
-						geometry.vertices.push(geometry.vertices[0].clone());
-						objects.push(new room_Part());
-						objects[objects.length-1].border = new THREE.Line(geometry);
+					if(state==1){
+						if(geometry!==undefined){
+							geometry.vertices.push(geometry.vertices[0].clone());
+							objects.push(new room_Part());
+							objects[objects.length-1].border = new THREE.Line(geometry);
+							objects[objects.length-1].border.dad = objects[objects.length-1];
+							objects[objects.length-1].height = details[0];
+							objects[objects.length-1].width = details[1];
+							objects[objects.length-1].elevation = geometry.vertices[0].y;
+						}
 					}
-					
 					roster.displayEdit();
 				}
 				
@@ -203,7 +222,7 @@
 						//save parts as flattened csv vertex lists
 						var total = "";
 						for(var i = 0; i < objects.length;i++){
-							total += ",O"
+							total += ",O," + objects[i].height +","+objects[i].width;
 							for(var j = 0; j < objects[i].border.geometry.vertices.length-1;j++){
 								total += ","+objects[i].border.geometry.vertices[j].x;
 								total += ","+objects[i].border.geometry.vertices[j].y;
@@ -271,26 +290,32 @@
 				var newobject = new room_Part();
 				objects.push(newobject);
 				
+				var gui_edit = new dat.GUI();
+				var gui_settings = new dat.GUI();
+				gui_settings.add(roster, "save").name("Save");
+				gui_settings.add(roster, "load").name("Load");
 				
-				var gui = new dat.GUI();
-				gui.add(roster, "save").name("Save");
-				gui.add(roster, "load").name("Load");
-				var roomFolder = gui.addFolder("Edit Rooms");
+				
+				var roomFolder = gui_edit.addFolder("Edit Rooms");
 				roomFolder.add(roster, "addPart").name("Add Room");
 				roomFolder.add(roster, "displayEdit").name("Edit Room Layout");
 				roomFolder.add(roster, "displayTest").name("Display Inset Borders");
 				roomFolder.add(roster, "displaySurface").name("Display Preview");
+				var doorFolder = gui_edit.addFolder("Edit Doors");
+				roomFolder.add(roster, "addPart").name("Add Door");
+				roomFolder.add(roster, "displayEdit").name("Edit Door Layout");
 				//var renderFolder = gui.addFolder("Display Options");
 				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
 				//renderFolder.add(roster, "displayEdit").name("Edit:");
 				//renderFolder.add(roster, "displaySurface").name("Preview:");
 				//renderFolder.add(roster, "displayWalls").name("Render:");
 								
+				
+				
+				roster.chosen = gui_edit.add(roster, "index").step(1).listen().onFinishChange(function(value){selected.update(objects[value])});
+				
 				var selected = new Selector();
 				var selectedPoint = 0;
-				
-				roster.chosen = gui.add(roster, "index").step(1).listen().onFinishChange(function(value){selected.update(objects[value])});
-				
 				//var cubeb = new THREE.CubeGeometry(40, 160, 40);
 				//negative.push(cubeb);
 				

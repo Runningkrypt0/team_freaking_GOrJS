@@ -349,7 +349,7 @@ var room_Part = function(){
 }
 
 var door_Part = function(){
-	
+	this.elevation = 0;
 }
 
 
@@ -361,7 +361,7 @@ var Selector = function(){
 	this.height = 0;
 	this.depth = 0;
 	
-	this.Folder = gui.addFolder('Selected');
+	this.Folder = gui_edit.addFolder('Selected');
 	this.update = function(anything){
 		
 		if(anything===this.object||anything===undefined){
@@ -378,11 +378,8 @@ var Selector = function(){
 				roster.index=i;
 			}
 		}
-		//this.Folder.destroy();
-		//var test = gui.addFolder('trial');
-		//gui.remove(test);
-		gui.remove(this.Folder);
-		this.Folder = gui.addFolder('Selected');
+		gui_edit.remove(this.Folder);
+		this.Folder = gui_edit.addFolder('Selected');
 		this.Folder.add(this.object, 'adjust').name("Edit Border");
 		this.Folder.add(this.object, 'add_edge').name("Add Corner");
 		this.Folder.add(this.object.border, 'visible',0,1);
