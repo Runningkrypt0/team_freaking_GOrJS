@@ -347,51 +347,6 @@ var room_Part = function(){
 	
 }
 
-var Part = function(){
-	this.type = 0;
-	
-	this.sign = true;
-	
-	this.width = 128;
-	this.height = 128;
-	this.depth = 128;
-	
-	this.x = 0;
-	this.y = 0;
-	this.z = 0;
-	
-	this.rotation = new THREE.Euler( 0, 0, 0, 'XYZ' );
-	
-	this.color = GenerateColor();
-
-	this.object = 0;
-	
-	this.update = function(){
-		var geometry = 0;
-		if (this.type == 0){
-			geometry = new THREE.CubeGeometry(this.width, this.height, this.depth);
-		} else {
-			geometry = new THREE.CubeGeometry(this.width, this.height, this.depth);
-		}
-		this.object = new THREE.Mesh(geometry , new THREE.MeshBasicMaterial( { color: this.color, opacity: 0.4 } ) )
-		roster.displayEdit();
-		this.object.geometry.rotateX(this.rotation.x);
-		this.object.geometry.rotateY(this.rotation.y);
-		this.object.geometry.rotateZ(this.rotation.z);
-		this.object.geometry.translate(this.x,this.y,this.z);
-		this.object.dad = this;
-	}
-	this.move = function(x,y,z){
-		this.x += x;
-		this.y += y;
-		this.z += z;
-		this.update();
-	}
-	this.update();
-	
-
-
-}
 
 var Selector = function(){
 	this.object = 0;

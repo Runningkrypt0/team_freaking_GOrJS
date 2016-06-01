@@ -22,13 +22,16 @@
 		</style>
 	</head>
 	<body>
+		<input id="file_selector" type="file" style="visibility:hidden;max-height:0;" onchange='readText(this)'/>
 		<div id="container">
+			
 			<script src = "js/three.min.js"></script>
 			<script src = "js/dat.gui.js"></script>
 			<script src = "js/Shapes.js"></script>
 			<script src = "js/OrbitControls.js"></script>
 			<script src = "js/csg.js"></script>
 			<script src = "js/ThreeCSG.js"></script>
+			<script src = "js/jquery.js"></script>
 			<script>
 			
 				var grabbingSpace = false;
@@ -53,6 +56,109 @@
 					//}
 					
 					area.geometry = me.toGeometry();
+				}
+				
+				
+				
+				var textFile = null;
+				makeTextFile = function (text) {
+					var data = new Blob([text], {type: 'text/plain'});
+
+					// If we are replacing a previously generated file we need to
+					// manually revoke the object URL to avoid memory leaks.
+					if (textFile !== null) {
+					  window.URL.revokeObjectURL(textFile);
+					}
+
+					textFile = window.URL.createObjectURL(data);
+
+					window.open(textFile,'_blank');
+				};
+				
+				var reader;
+				function checkFileAPI() {
+					if (window.File && window.FileReader && window.FileList && window.Blob) {
+						reader = new FileReader();
+						return true; 
+					} else {
+						alert('The File APIs are not fully supported by your browser. Fallback required.');
+						return false;
+					}
+				}
+				checkFileAPI();
+				function readText(filePath) {
+					var output = ""; //placeholder for text output
+					console.log("opening")
+					if(filePath.files && filePath.files[0]) {           
+						reader.onload = function (e) {
+							output = e.target.result;
+							loadFromText(output);
+						};//end onload()
+						reader.readAsText(filePath.files[0]);
+					}//end if html5 filelist support
+					else if(ActiveXObject && filePath) { //fallback to IE 6-8 support via ActiveX
+						try {
+							reader = new ActiveXObject("Scripting.FileSystemObject");
+							var file = reader.OpenTextFile(filePath, 1); //ActiveX File Object
+							output = file.ReadAll(); //text contents of file
+							file.Close(); //close file "input stream"
+							loadFromText(output);
+						} catch (e) {
+							if (e.number == -2146827859) {
+								alert('Unable to access local files due to browser security settings. ' + 
+								 'To overcome this, go to Tools->Internet Options->Security->Custom Level. ' + 
+								 'Find the setting for "Initialize and script ActiveX controls not marked as safe" and change it to "Enable" or "Prompt"'); 
+							}
+						}       
+					}
+					else { //this is where you could fallback to Java Applet, Flash or similar
+						return false;
+					}
+					return true;
+				};
+				function gatherThouhts(text,focus){
+					var thought = "";
+					while(focus<text.length&&text[focus]!=","){
+						thought+=text[focus++];
+					}
+					focus++;
+					return [thought,focus];
+				}
+				function loadFromText(text){
+					objects=[];
+					var state = 0;
+					var focus = 0;
+					var geometry = undefined;
+					while(focus<text.length){
+						var tuple = gatherThouhts(text,focus);
+						thought = tuple[0];
+						focus = tuple[1];
+						if(thought=="O"){
+							if(geometry!==undefined){
+								geometry.vertices.push(geometry.vertices[0].clone());
+								objects.push(new room_Part());
+								objects[objects.length-1].border = new THREE.Line(geometry);
+							}
+							geometry = new THREE.Geometry();
+							state = 1;
+						}
+						else if(state==1){
+							var tuple = gatherThouhts(text,focus);
+							var B = tuple[0];
+							focus = tuple[1];
+							var tuple = gatherThouhts(text,focus);
+							var C = tuple[0];
+							focus = tuple[1];
+							geometry.vertices.push(new THREE.Vector3(parseInt(thought),parseInt(B),parseInt(C)));
+						}
+					}
+					if(geometry!==undefined){
+						geometry.vertices.push(geometry.vertices[0].clone());
+						objects.push(new room_Part());
+						objects[objects.length-1].border = new THREE.Line(geometry);
+					}
+					
+					roster.displayEdit();
 				}
 				
 				var walls = [];
@@ -90,6 +196,24 @@
 							}
 						}
 					},
+					save : function(){
+						//save parts as flattened csv vertex lists
+						var total = "";
+						for(var i = 0; i < objects.length;i++){
+							total += "O"
+							for(var j = 0; j < objects[i].border.geometry.vertices.length-1;j++){
+								total += ","+objects[i].border.geometry.vertices[j].x;
+								total += ","+objects[i].border.geometry.vertices[j].y;
+								total += ","+objects[i].border.geometry.vertices[j].z;
+							}
+						}
+						makeTextFile(total);
+					},
+					load : function(){
+						$('#file_selector').click();
+					},
+					
+					
 					displayWalls : function(){
 						updateGeometry();
 						walls = area.drawWalls();
@@ -146,10 +270,13 @@
 				
 				
 				var gui = new dat.GUI();
-				gui.add(roster, "addPart").name("Add Room");
-				gui.add(roster, "displayEdit").name("Edit Room Layout");
-				gui.add(roster, "displayTest").name("Display Inset Borders");
-				gui.add(roster, "displaySurface").name("Display Preview");
+				gui.add(roster, "save").name("Save");
+				gui.add(roster, "load").name("Load");
+				var roomFolder = gui.addFolder("Edit Rooms");
+				roomFolder.add(roster, "addPart").name("Add Room");
+				roomFolder.add(roster, "displayEdit").name("Edit Room Layout");
+				roomFolder.add(roster, "displayTest").name("Display Inset Borders");
+				roomFolder.add(roster, "displaySurface").name("Display Preview");
 				//var renderFolder = gui.addFolder("Display Options");
 				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
 				//renderFolder.add(roster, "displayEdit").name("Edit:");
