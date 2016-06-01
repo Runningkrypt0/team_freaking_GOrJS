@@ -262,17 +262,15 @@ var room_Part = function(){
 	this.generate_Inset = function(){
 		//create inset area
 		
+		if(this.width<=0){
+			this.object = this.border.clone();
+		}
+		
 		var splits = [];
 		splits.push(this.border.geometry.vertices[0].clone().sub(this.border.geometry.vertices[this.border.geometry.vertices.length-2]).normalize());
 		for(var i=1;i<this.border.geometry.vertices.length;i++){
 			splits.push(this.border.geometry.vertices[i].clone().sub(this.border.geometry.vertices[i-1]).normalize());
 		}
-		
-		var center = new THREE.Vector3();
-		for(var i=1;i<this.border.geometry.vertices.length;i++){
-			center.add(this.border.geometry.vertices[i]);
-		}
-		center.divideScalar(this.border.geometry.vertices.length-1);
 		
 		//now to create the decension angles
 		var raw_attractor;
@@ -287,7 +285,14 @@ var room_Part = function(){
 			var back_angle = Math.acos(raw_attractor.dot(splits[i]));//angle between
 			raw_attractor.divideScalar(Math.sin(back_angle));
 			raw_attractor.multiplyScalar(this.width);
-			geometry.vertices[i].sub(raw_attractor);
+			var test_angle = new THREE.Vector3();
+			test_angle.x = -splits[i].z;
+			test_angle.z = splits[i].x;
+			if(test_angle.dot(splits[i+1])<0){//convex
+				geometry.vertices[i].sub(raw_attractor);
+			}else{ //concave
+				geometry.vertices[i].add(raw_attractor);
+			}
 		}
 		geometry.vertices[geometry.vertices.length-1].copy(geometry.vertices[0]);
 		
