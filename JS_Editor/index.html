@@ -133,7 +133,10 @@
 						var tuple = gatherThouhts(text,focus);
 						thought = tuple[0];
 						focus = tuple[1];
+						console.log(thought);
 						if(thought=="O"){
+							
+							console.log("new object");
 							if(geometry!==undefined){
 								geometry.vertices.push(geometry.vertices[0].clone());
 								objects.push(new room_Part());
@@ -200,7 +203,7 @@
 						//save parts as flattened csv vertex lists
 						var total = "";
 						for(var i = 0; i < objects.length;i++){
-							total += "O"
+							total += ",O"
 							for(var j = 0; j < objects[i].border.geometry.vertices.length-1;j++){
 								total += ","+objects[i].border.geometry.vertices[j].x;
 								total += ","+objects[i].border.geometry.vertices[j].y;

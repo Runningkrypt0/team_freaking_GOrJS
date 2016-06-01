@@ -207,7 +207,8 @@ var room_Part = function(){
 	this.object = 0;
 	this.edges = [];
 	this.width = 8;
-	this.height = 0;
+	this.elevation = 0;
+	this.height = 192;
 	
 	this.border.dad = this;
 	
@@ -297,7 +298,7 @@ var room_Part = function(){
 		//load inset area
 		this.generate_Inset();
 		//extrude up
-		var path_points = [this.object.geometry.vertices[0].clone().add(new THREE.Vector3(0,192,0)),this.object.geometry.vertices[0]];
+		var path_points = [this.object.geometry.vertices[0].clone().add(new THREE.Vector3(0,this.height,0)),this.object.geometry.vertices[0]];
 		var randomSpline = new THREE.CatmullRomCurve3( path_points );
 		var extrudeSettings = {
 			steps			: 2,
@@ -347,6 +348,10 @@ var room_Part = function(){
 	
 }
 
+var door_Part = function(){
+	
+}
+
 
 var Selector = function(){
 	this.object = 0;
@@ -382,7 +387,9 @@ var Selector = function(){
 		this.Folder.add(this.object, 'add_edge').name("Add Corner");
 		this.Folder.add(this.object.border, 'visible',0,1);
 		this.Folder.add(roster, 'removePart').name("Delete");
-		this.Folder.add(this.object, "height").step(16).listen().onFinishChange(function(value){this.object.set_height(value)});
+		this.Folder.add(this.object, "elevation").step(16).name("Elevation").listen().onFinishChange(function(value){this.object.set_height(value)});
+		this.Folder.add(this.object, "height").step(64).name("Room Height");
+		
 		this.Folder.add(this.object, "width").step(4);
 		//this.Folder.add(this.object, 'sign', 0, 1);
 		
