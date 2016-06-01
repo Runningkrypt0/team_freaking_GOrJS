@@ -1,0 +1,294 @@
+<html>
+	<head>
+		<title>Artificial Amateur</title>
+		<style>
+			@font-face {
+				font-family: 'inconsolata';
+				src: url('fonts/inconsolata.woff') format('woff');
+				font-weight: normal;
+				font-style: normal;
+			}
+			
+			body {
+				margin:0;
+				font-family: 'inconsolata';
+				font-size: 15px;
+				line-height: 18px;
+				overflow: hidden;
+			}
+			
+			canvas {width: 100%; height: 100%; }
+			container {width:100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<script src = "js/three.min.js"></script>
+			<script src = "js/dat.gui.js"></script>
+			<script src = "js/Shapes.js"></script>
+			<script src = "js/OrbitControls.js"></script>
+			<script src = "js/csg.js"></script>
+			<script src = "js/ThreeCSG.js"></script>
+			<script>
+			
+				var grabbingSpace = false;
+				var _LIMIT_ = 9999999
+				var _STOP_ = -1;
+				
+				
+				
+				function updateGeometry(){
+					objects[0].generate_object();
+					var me = new ThreeBSP(objects[0].object.geometry);
+					for(p = 1; p < objects.length;p++){
+						objects[p].generate_object();
+						//if(objects[p].sign){
+							me = me.union(new ThreeBSP(objects[p].object.geometry));
+						//}
+					}
+					//for(n = 0; n < objects.length;n++){
+					//	if(!(objects[n].sign)){
+					//		me = me.subtract(new ThreeBSP(objects[n].object.geometry));
+					//	}
+					//}
+					
+					area.geometry = me.toGeometry();
+				}
+				
+				var walls = [];
+				
+				var area = new Room();
+			
+				var camera, controls, scene, renderer;
+				
+				//var negative = [];
+				var objects = [];
+				
+				
+				
+				var roster = {
+					RESET_MODE : function(){
+					
+					},
+					
+					SET_MODE_BORDER_EDIT : function(){
+						roster.RESET_MODE();
+						
+					},
+					
+					_WIREFRAME_ : false,
+					index: 0,
+					displaySurface : function(){
+						updateGeometry();
+						walls = area.drawSurfaces();
+						collisionObjects=[];
+						
+						if(scene){
+							reality = scene.clone();
+							for(i=0; i<walls.length;i++){
+								reality.add( walls[i] );
+							}
+						}
+					},
+					displayWalls : function(){
+						updateGeometry();
+						walls = area.drawWalls();
+						collisionObjects=[];
+						
+						if(scene){
+							reality = scene.clone();
+							for(i=0; i<walls.length;i++){
+								reality.add( walls[i] );
+							}
+						}
+					},
+					displayEdit : function(){
+						collisionObjects = [];
+						for(i=0;i<objects.length;i++){
+							collisionObjects.push(objects[i].border);
+						}
+						
+						if(!scene){
+							for(i = 0; i < objects.length;i++){
+								objects[i].object.material.transparent = true;
+							}
+							return;
+						}
+						
+						reality = scene.clone();
+						for(i = 0; i < objects.length;i++){
+							reality.add(objects[i].border);
+						}
+					},
+					displayTest : function(){
+						collisionObjects = [];
+						
+						//reality = scene.clone();
+						for(i = 0; i < objects.length;i++){
+							objects[i].generate_object();
+							reality.add(objects[i].object);
+						}
+					},
+					addPart: function() {
+						var newobject = new room_Part();
+						objects.push(newobject);
+						roster.displayEdit();
+					},
+					removePart: function(){
+						objects.splice(this.index,1);
+						roster.displayEdit();
+					}
+					
+					
+				}
+				var newobject = new room_Part();
+				objects.push(newobject);
+				
+				
+				var gui = new dat.GUI();
+				gui.add(roster, "addPart").name("Add Room");
+				gui.add(roster, "displayEdit").name("Edit Room Layout");
+				gui.add(roster, "displayTest").name("Display Inset Borders");
+				gui.add(roster, "displaySurface").name("Display Preview");
+				//var renderFolder = gui.addFolder("Display Options");
+				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
+				//renderFolder.add(roster, "displayEdit").name("Edit:");
+				//renderFolder.add(roster, "displaySurface").name("Preview:");
+				//renderFolder.add(roster, "displayWalls").name("Render:");
+								
+				var selected = new Selector();
+				var selectedPoint = 0;
+				
+				roster.chosen = gui.add(roster, "index").step(1).listen().onFinishChange(function(value){selected.update(objects[value])});
+				
+				//var cubeb = new THREE.CubeGeometry(40, 160, 40);
+				//negative.push(cubeb);
+				
+				var Grid = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000),new THREE.MeshBasicMaterial({color: 0xffff00,side: THREE.DoubleSide}));
+				Grid.geometry.rotateX(-Math.PI*0.5);
+				
+				
+
+				//var sphere = new THREE.SphereGeometry(100, 32, 32);
+				//var sphere_bsp = new ThreeBSP( sphere, {offset: {x: 1, y:2, z: 1}} );
+
+				//console.time('operation');
+				//var union = cube_bsp.subtract( sphere_bsp );
+				//console.timeEnd('operation');
+
+				//console.time('mesh');
+				//var polygon = new THREE.Mesh( union.toGeometry(), new THREE.MeshNormalMaterial );
+				//console.timeEnd('mesh');
+				
+				//polygon.geometry.computeFaceNormals(); // highly recommended...
+				
+				var collisionObjects = [];
+				
+				var raycaster;
+				var mouse;
+				
+				
+				init();
+				animate();
+				
+				//to write TONIGHT
+				// hollow
+				// connection addition for plane meshes 
+				// box3 extension for connections   (checkish)
+				
+				//to write
+				// subtract: inputs: 2 box3's, subtracts b from a and returns array of box3's
+
+				function init() {
+					scene = new THREE.Scene();
+					scene.fog = new THREE.FogExp2( 0x111111, 0.00002 );
+
+					renderer = new THREE.WebGLRenderer();
+					renderer.setClearColor( scene.fog.color );
+					renderer.setPixelRatio( window.devicePixelRatio );
+					renderer.setSize( window.innerWidth, window.innerHeight );
+
+					var container = document.getElementById( 'container' );
+					container.appendChild( renderer.domElement );
+
+					camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+					camera.position.z = 500;
+					camera.position.y = 150;
+					camera.position.x = 150;
+
+					controls = new THREE.OrbitControls( camera, renderer.domElement );
+					//controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
+					controls.enableDamping = true;
+					controls.dampingFactor = 0.25;
+					controls.enableZoom = true;
+					controls.enableKeys = false;
+					
+
+					
+					// world-------------------------------------------------------------------------------------------------
+					
+					//for(i=0; i<walls.length;i++){
+					//	scene.add( walls[i] );
+					//}
+
+					
+					
+					// 0-----------------------------------------------------------------------------------------------------
+					// lights
+
+					light = new THREE.DirectionalLight( 0xffffff );
+					light.position.set( 1, 1, 1 );
+					scene.add( light );
+
+					light = new THREE.DirectionalLight( 0x002288 );
+					light.position.set( -1, -1, -1 );
+					scene.add( light );
+
+					light = new THREE.AmbientLight( 0x222222 );
+					scene.add( light );
+
+					//
+
+					window.addEventListener( 'resize', onWindowResize, false );
+					
+					//select object
+					raycaster = new THREE.Raycaster();
+					raycaster.linePrecision = 20;
+					mouse = new THREE.Vector2();
+					
+					//document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+					
+					//scene.add(Grid);
+					
+					reality = scene.clone();
+					roster.displayEdit();
+				}
+
+				function onWindowResize() {
+
+					camera.aspect = window.innerWidth / window.innerHeight;
+					camera.updateProjectionMatrix();
+
+					renderer.setSize( window.innerWidth, window.innerHeight );
+
+				}
+
+				function animate() {
+
+					requestAnimationFrame( animate );
+
+					controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+
+					render();
+
+				}
+
+				function render() {
+				
+					renderer.render( reality, camera );
+
+				}
+			</script>
+		</div>
+	</body>
+</html>

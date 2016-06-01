@@ -1,0 +1,69 @@
+
+			signs = [];
+			var totalangle = 0;
+			
+			//determine concavity polarity for surface and marks
+			for(j=0;j<path.length;j++){
+				var front = new THREE.Line3(path[j],path[bind(j-1,path.length)]).delta().normalize().applyQuaternion(rotateQ);
+				var back = new THREE.Line3(path[j],path[bind(j+1,path.length)]).delta().normalize().applyQuaternion(rotateQ);
+				
+				var angle = Math.atan2(front.y,front.x) - Math.atan2(back.y,back.x);
+				if(angle>Math.PI){
+					angle-=Math.PI*2;
+				}else if(angle<-Math.PI){
+					angle+=Math.PI*2;
+				}
+				
+				totalangle+=angle;
+				
+				if(angle<0){
+					signs.push(-1);
+				}else{
+					signs.push(1);
+				}
+				
+				var temppass = 0;
+			}
+			
+			//if the total angle in not ~equal~ to +/- tau SOMETHING IS VERY WRONG
+			//also: maybe rotate the vectors FIRST then set z to 0 and normalize, reduce error and prevent issues with non-flat surfaces (which shouldn't exist...)
+			
+			var polarity=1;
+			if(totalangle<0){
+				polarity=-1;
+			}
+			
+			//form groups!
+			
+			//start at next concave (or 0 if none)
+			//n=2
+			//create face of 0..n-1..n
+			//repeat until you hit end or concave at n
+			//eliminate all points BETWEEN 0 and n
+			//check if -1..0..n..n+1 is straight and appropriately delete
+			//repeat
+			
+			while(path.length<0){
+				//new surface
+				var step = 0;
+				var size = 0;
+				for(j=0;j<signs.length;j++){
+					if(signs[j]*polarity<0){
+						var width = 0;
+						for(k=1;k<signs.length-1;k++){
+							if(signs[bind(j+k,signs.length)]*polarity<0){
+								width = k;
+								break;
+							}
+						}
+						if(width>size){
+							step = j;
+							size = width;
+						}
+					}
+				}
+				if(size==0){
+					size=signs.length-1;
+				}
+				
+				
