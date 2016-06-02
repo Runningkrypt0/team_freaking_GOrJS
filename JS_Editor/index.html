@@ -152,7 +152,7 @@
 									objects[objects.length-1].border.dad = objects[objects.length-1];
 									objects[objects.length-1].height = details[0];
 									objects[objects.length-1].width = details[1];
-									objects[objects.length-1].elevation = geometry.vertices[0].y;
+									objects[objects.length-1].elevation = details[2];
 								}
 							}
 							geometry = new THREE.Geometry();
@@ -163,7 +163,10 @@
 							var tuple = gatherThouhts(text,focus);
 							var C = tuple[0];
 							focus = tuple[1];
-							details = [parseInt(B),parseInt(C)];
+							var tuple = gatherThouhts(text,focus);
+							var D = tuple[0];
+							focus = tuple[1];
+							details = [parseInt(B),parseInt(C),parseInt(D)];
 						}
 						else if(thought=="D"){
 							if(state==1){
@@ -174,7 +177,7 @@
 									objects[objects.length-1].border.dad = objects[objects.length-1];
 									objects[objects.length-1].height = details[0];
 									objects[objects.length-1].width = details[1];
-									objects[objects.length-1].elevation = geometry.vertices[0].y;
+									objects[objects.length-1].elevation = details[2];
 								}
 							}
 							state = 0;
@@ -205,12 +208,9 @@
 						}
 						else if(state==1){
 							var tuple = gatherThouhts(text,focus);
-							var B = tuple[0];
-							focus = tuple[1];
-							var tuple = gatherThouhts(text,focus);
 							var C = tuple[0];
 							focus = tuple[1];
-							geometry.vertices.push(new THREE.Vector3(parseInt(thought),parseInt(B),parseInt(C)));
+							geometry.vertices.push(new THREE.Vector3(parseInt(thought),0,parseInt(C)));
 						}
 					}
 					if(state==1){
@@ -221,7 +221,7 @@
 							objects[objects.length-1].border.dad = objects[objects.length-1];
 							objects[objects.length-1].height = details[0];
 							objects[objects.length-1].width = details[1];
-							objects[objects.length-1].elevation = geometry.vertices[0].y;
+							objects[objects.length-1].elevation = details[2];;
 						}
 					}
 					roster.displayEdit();
@@ -315,7 +315,6 @@
 							total += ",O," + objects[i].height +","+objects[i].width;
 							for(var j = 0; j < objects[i].border.geometry.vertices.length-1;j++){
 								total += ","+objects[i].border.geometry.vertices[j].x;
-								total += ","+objects[i].border.geometry.vertices[j].y;
 								total += ","+objects[i].border.geometry.vertices[j].z;
 							}
 						}

@@ -330,10 +330,13 @@ var room_Part = function(){
 		for( n=0;n<this.border.geometry.vertices.length-1;n++){
 			test_vector_A = this.border.geometry.vertices[n+1].clone().sub(this.border.geometry.vertices[n]);
 			test_vector_B = position.clone().sub(this.border.geometry.vertices[n]);
+			test_vector_A.y = 0;
+			test_vector_B.y = 0;
 			test_angle_A = test_vector_A.clone().normalize();
 			test_angle_B = test_vector_B.clone().normalize();
 			if(test_angle_A.dot(test_angle_B)>.99&&test_vector_B.length()<test_vector_A.length()&&test_vector_B.length()>0){//perfect
-				temp = position.clone();
+				temp = SnapToGrid(position.clone());
+				temp.y = this.elevation;
 				break;
 			}
 		}
@@ -342,14 +345,13 @@ var room_Part = function(){
 		}
 		roster.CONTROL_MODE = 0;
 		var geometry = this.border.geometry.clone();
-		geometry.vertices.splice(n+1,0,SnapToGrid(temp));
+		geometry.vertices.splice(n+1,0,temp);
 		
 		
 		
 		this.border = new THREE.Line(geometry);
 		this.border.dad = this;
 		roster.displayEdit();
-		this.update();
 		this.adjust();
 	}
 	this.remove = function(chosen){
@@ -387,11 +389,13 @@ var room_Part = function(){
 	this.snap = function(){
 		for(var i=0;i<this.border.geometry.vertices.length;i++){
 			this.border.geometry.vertices[i].copy(SnapToGrid(this.border.geometry.vertices[i]));
+			this.border.geometry.vertices[i].y=this.elevation;
 			if(this.edges[i]!==undefined){
-				this.edges[i].position.copy(SnapToGrid(this.edges[i].position.copy));
+				this.edges[i].position.copy(SnapToGrid(this.edges[i].position));
+				this.edges[i].position.y = this.elevation;
 			}
 		}
-		this.update();
+		roster.displayEdit();
 		this.adjust();
 	}
 	
@@ -408,7 +412,8 @@ var room_Part = function(){
 		for(var i=0;i<this.border.geometry.vertices.length;i++){
 			this.border.geometry.vertices[i].y=height;
 		}
-		this.update();
+		roster.displayEdit();
+		this.adjust();
 	}
 	
 	this.generate_Inset = function(){
@@ -502,7 +507,10 @@ var room_Part = function(){
 			}
 			box.snap = function(){
 				this.position.copy(SnapToGrid(this.position));
+				
 				this.target.copy(SnapToGrid(this.target));
+				this.position.y = this.owner.elevation;
+				this.target.y = this.owner.elevation;
 				box.owner.update();
 			}
 			this.edges.push(box);
@@ -540,7 +548,7 @@ var door_Part = function(){
 		this.object = new THREE.Mesh(new THREE.BoxGeometry( this.width, this.height, 2*Math.max(this.room_A.width,this.room_B.width) ));
 		this.object.geometry.rotateY(-this.rotation);
 		this.object.geometry.translate(this.widget.position.x,this.widget.position.y,this.widget.position.z);
-		this.object.geometry.translate(0,this.height/2+this.base+Math.max(this.room_A.elevation,this.room_B.elevation),0);
+		this.object.geometry.translate(0,this.height/2+this.base,0);
 		
 		//rotate to face normal
 	}
@@ -550,7 +558,9 @@ var door_Part = function(){
 		var n, temp, test_vector_A, test_vector_B, test_angle_A, test_angle_B;
 		for(n=0;n<merges.length;n++){
 			test_vector_A = merges[n].geometry.vertices[1].clone().sub(merges[n].geometry.vertices[0]);
+			test_vector_A.y = 0;
 			test_vector_B = this.widget.position.clone().sub(merges[n].geometry.vertices[0]);
+			test_vector_B.y = 0;
 			test_angle_A = test_vector_A.clone().normalize();
 			test_angle_B = test_vector_B.clone().normalize();
 			if(test_angle_A.dot(test_angle_B)>.99&&test_vector_B.length()<test_vector_A.length()&&test_vector_B.length()>0){//perfect
@@ -563,9 +573,11 @@ var door_Part = function(){
 		}
 		//snap to frame somehow
 		this.widget.position.copy(temp);
+		
 		this.enabled = true;
 		this.room_A = merges[n].part_A;
 		this.room_B = merges[n].part_B;
+		this.widget.position.y = Math.max(this.room_A.elevation,this.room_B.elevation);
 		this.rotation = Math.atan2(test_vector_A.z,test_vector_A.x);
 		if(this.rotation>Math.PI){
 			this.rotation-=Math.PI*2;
@@ -613,7 +625,7 @@ var Selector = function(){
 			this.Folder.add(this.object, 'add_edge').name("Add Corner");
 			this.Folder.add(this.object, 'remove_edge').name("Remove Corner");
 			this.Folder.add(this.object, 'remove').name("Remove This");
-			this.Folder.add(this.object, "elevation").step(16).name("Elevation").listen().onFinishChange(function(value){this.object.set_height(value)});
+			this.Folder.add(this.object, "elevation").step(16).name("Elevation").onFinishChange(function(value){this.object.set_height(value)});
 			this.Folder.add(this.object, "height").step(64).name("Room Height");
 		
 			this.Folder.add(this.object, "width").step(4);

@@ -475,7 +475,7 @@
 					selected.update(intersects[0].object.dad);
 					selectedPoint = intersects[ 0 ].point;
 					
-					Grid.geometry.y = selectedPoint.y;
+					Grid.geometry.translate(0,selectedPoint.y,0);
 					
 					document.addEventListener( 'mousemove', onMouseMoveDrag, false );
 					document.addEventListener( 'mouseup', onMouseUpDrag, false );
