@@ -185,9 +185,9 @@ function GenerateColor(){
 }
 
 function SnapToGrid(v){
-	v.x = Math.round(v.x/10)*10;
-	v.y = Math.round(v.y/10)*10;
-	v.z = Math.round(v.z/10)*10;
+	v.x = Math.round(v.x/roster.GRID_SIZE)*roster.GRID_SIZE;
+	v.y = Math.round(v.y/roster.GRID_SIZE)*roster.GRID_SIZE;
+	v.z = Math.round(v.z/roster.GRID_SIZE)*roster.GRID_SIZE;
 	return v;
 }
 
@@ -325,13 +325,12 @@ var room_Part = function(){
 	}
 	this.add = function(position){
 		//determine part from position
-		var temp;
-		var n;
+		var n, temp, test_vector_A, test_vector_B, test_angle_A, test_angle_B;
 		for( n=0;n<this.border.geometry.vertices.length-1;n++){
-			var test_vector_A = this.border.geometry.vertices[n+1].clone().sub(this.border.geometry.vertices[n]);
-			var test_vector_B = position.clone().sub(this.border.geometry.vertices[n]);
-			var test_angle_A = test_vector_A.clone().normalize();
-			var test_angle_B = test_vector_B.clone().normalize();
+			test_vector_A = this.border.geometry.vertices[n+1].clone().sub(this.border.geometry.vertices[n]);
+			test_vector_B = position.clone().sub(this.border.geometry.vertices[n]);
+			test_angle_A = test_vector_A.clone().normalize();
+			test_angle_B = test_vector_B.clone().normalize();
 			if(test_angle_A.dot(test_angle_B)>.99&&test_vector_B.length()<test_vector_A.length()&&test_vector_B.length()>0){//perfect
 				temp = position.clone();
 				break;
@@ -364,7 +363,6 @@ var room_Part = function(){
 					return;
 				}
 			}
-			
 		}
 		
 		var geometry = this.border.geometry.clone();
@@ -382,6 +380,16 @@ var room_Part = function(){
 		this.border.dad = this;
 		roster.displayEdit();
 		console.log(this.border);
+		this.update();
+		this.adjust();
+	}
+	this.snap = function(){
+		for(var i=0;i<this.border.geometry.vertices.length;i++){
+			this.border.geometry.vertices[i].copy(SnapToGrid(this.border.geometry.vertices[i]));
+			if(this.edges[i]!==undefined){
+				this.edges[i].position.copy(SnapToGrid(this.edges[i].position.copy));
+			}
+		}
 		this.update();
 		this.adjust();
 	}
@@ -480,7 +488,7 @@ var room_Part = function(){
 			box.position.z = this.border.geometry.vertices[i].z;
 			box.non_focusable = true;
 			box.dad = box;
-			box.target = this.border.geometry.vertices[i]
+			box.target = this.border.geometry.vertices[i];
 			box.owner = this;
 			box.remove = function(me){
 				this.owner.remove(this);
@@ -489,6 +497,11 @@ var room_Part = function(){
 			box.move = function(x,y,z){
 				this.target.add(new THREE.Vector3(x,y,z));
 				this.position.add(new THREE.Vector3(x,y,z));
+				box.owner.update();
+			}
+			box.snap = function(){
+				this.position.copy(SnapToGrid(this.position));
+				this.target.copy(SnapToGrid(this.target));
 				box.owner.update();
 			}
 			this.edges.push(box);
@@ -501,6 +514,7 @@ var room_Part = function(){
 
 var door_Part = function(){
 	this.type = 1;
+	this.enabled = true;
 	this.elevation = 0;
 	this.widget = new THREE.Mesh(new THREE.BoxGeometry( 16, 16, 16 ));
 	this.widget.dad = this;
@@ -511,6 +525,16 @@ var door_Part = function(){
 	this.height = 128;
 	this.base = 0;
 	this.rotation = 0;
+	this.remove = function(){
+		for( n=0;n<doors.length;n++){
+			if(doors[n]===this){
+				doors.splice(n,1)
+				roster.CONTROL_MODE = 0;
+				roster.displayEdit();
+				return;
+			}
+		}
+	}
 	this.generate_object = function(){
 		this.object = new THREE.Mesh(new THREE.BoxGeometry( this.width, this.height, 2*Math.max(this.room_A.width,this.room_B.width) ));
 		this.object.geometry.rotateY(-this.rotation);
@@ -520,7 +544,36 @@ var door_Part = function(){
 		//rotate to face normal
 	}
 	this.adjust = function(){}
+	this.snap = function(){
+		//need to grab on to a door frame if possible, other wise disable self
+		var n, temp, test_vector_A, test_vector_B, test_angle_A, test_angle_B;
+		for(n=0;n<merges.length;n++){
+			test_vector_A = merges[n].geometry.vertices[1].clone().sub(merges[n].geometry.vertices[0]);
+			test_vector_B = this.widget.position.clone().sub(merges[n].geometry.vertices[0]);
+			test_angle_A = test_vector_A.clone().normalize();
+			test_angle_B = test_vector_B.clone().normalize();
+			if(test_angle_A.dot(test_angle_B)>.99&&test_vector_B.length()<test_vector_A.length()&&test_vector_B.length()>0){//perfect
+				temp = test_angle_A.clone().multiplyScalar(test_vector_B.length()).add(merges[n].geometry.vertices[0]);
+				break;
+			}
+		}
+		if(temp===undefined){
+			return;
+		}
+		//snap to frame somehow
+		this.widget.position.copy(temp);
+		this.enabled = true;
+		this.room_A = merges[n].part_A;
+		this.room_B = merges[n].part_B;
+		this.rotation = Math.atan2(test_vector_A.z,test_vector_A.x);
+		if(this.rotation>Math.PI){
+			this.rotation-=Math.PI*2;
+		}else if(this.rotation<-Math.PI){
+			this.rotation+=Math.PI*2;
+		}
+	}
 	this.move = function(x,y,z){
+		this.enabled = false;
 		this.widget.position.add(new THREE.Vector3(x,y,z));
 	}
 }
@@ -1144,8 +1197,3 @@ var Room = function(){
 		return Walls;
 	}
 };
-		
-		
-			
-		
-		

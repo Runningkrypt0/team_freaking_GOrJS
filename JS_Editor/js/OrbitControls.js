@@ -467,8 +467,8 @@
 				//move
 				
 				if(roster.CONTROL_MODE==0){
-					intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
-					intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
+					//intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
+					//intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
 					
 					console.log("Selected Object");
 					
@@ -481,8 +481,8 @@
 					document.addEventListener( 'mouseup', onMouseUpDrag, false );
 				}else if(roster.CONTROL_MODE==1){
 					//add
-					intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
-					intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
+					//intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
+					//intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
 					console.log("Created at: ", intersects[0].point)
 					intersects[0].object.dad.add(intersects[0].point);
 				}else if(roster.CONTROL_MODE==2){
@@ -598,8 +598,8 @@
 
 			var intersects = raycaster.intersectObject( Grid );
 			if(intersects.length>0){
-				intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
-				intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
+				//intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
+				//intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
 				selected.object.move(intersects[0].point.x-selectedPoint.x, 0, intersects[0].point.z-selectedPoint.z);
 				selectedPoint = intersects[0].point;
 			}
@@ -630,9 +630,10 @@
 			var intersects = raycaster.intersectObject( Grid );
 			if(intersects.length>0){
 				console.log("Object Migrated");
-				intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
-				intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
-				selected.object.move(intersects[0].point.x-selectedPoint.x, 0, intersects[0].point.z-selectedPoint.z);
+				selected.object.snap();
+				//intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
+				//intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
+				//selected.object.move(intersects[0].point.x-selectedPoint.x, 0, intersects[0].point.z-selectedPoint.z);
 			}
 			console.log(collisionObjects);
 			

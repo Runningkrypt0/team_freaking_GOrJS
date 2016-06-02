@@ -53,9 +53,9 @@
 					}
 					for(p = 0; p < doors.length;p++){
 						doors[p].generate_object();
-						//if(objects[p].sign){
+						if(doors[p].enabled){
 							me = me.union(new ThreeBSP(doors[p].object.geometry));
-						//}
+						}
 					}
 					//for(n = 0; n < objects.length;n++){
 					//	if(!(objects[n].sign)){
@@ -211,6 +211,7 @@
 				
 				var roster = {
 					CONTROL_MODE : 0,
+					GRID_SIZE : 32,
 					RESET_MODE : function(){
 					
 					},
@@ -280,7 +281,9 @@
 							collisionObjects.push(objects[i].border);
 							reality.add(objects[i].border);
 						}
+						roster.calculate_merges();
 						for(i = 0; i < doors.length;i++){
+							doors[i].snap();
 							collisionObjects.push(doors[i].widget);
 							reality.add(doors[i].widget);
 						}
@@ -307,18 +310,8 @@
 										mesh.dad = mesh;
 										mesh.add = function(position){
 											var nD = new door_Part();
-											nD.room_A = this.part_A;
-											nD.room_B = this.part_B;
 											nD.move(position.x,position.y,position.z);
-											var temp = this.geometry.vertices[1].clone().sub(this.geometry.vertices[0]);
-											var angle = Math.atan2(temp.z,temp.x);
-											console.log(angle);
-											if(angle>Math.PI){
-												angle-=Math.PI*2;
-											}else if(angle<-Math.PI){
-												angle+=Math.PI*2;
-											}
-											nD.rotation = angle;//+Math.PI/2;
+											nD.snap();
 											doors.push(nD);
 											roster.displayEdit();
 										}
@@ -367,15 +360,16 @@
 				var gui_settings = new dat.GUI();
 				gui_settings.add(roster, "save").name("Save");
 				gui_settings.add(roster, "load").name("Load");
+				gui_settings.add(roster, "GRID_SIZE").step(8).name("Grid Size");
+				gui_settings.add(roster, "displayEdit").name("Display Plans");
+				gui_settings.add(roster, "displaySurface").name("Display Preview");
 				
 				
 				var roomFolder = gui_edit.addFolder("Edit Rooms");
 				roomFolder.add(roster, "addPart").name("Add Room");
-				roomFolder.add(roster, "removePart").name("Delete Room");
-				roomFolder.add(roster, "displayTest").name("Display Inset Borders");
-				roomFolder.add(roster, "displaySurface").name("Display Preview");
-				var doorFolder = gui_edit.addFolder("Edit Doors");
-				doorFolder.add(roster, "addDoor").name("Add Door");
+				roomFolder.add(roster, "addDoor").name("Add Door");
+				roomFolder.add(roster, "removePart").name("Delete Room/Door");
+				
 				//var renderFolder = gui.addFolder("Display Options");
 				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
 				//renderFolder.add(roster, "displayEdit").name("Edit:");
