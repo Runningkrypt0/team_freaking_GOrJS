@@ -202,7 +202,7 @@ var room_Part = function(){
 		new THREE.Vector3(-192,0,-192)
 	);
 	
-	
+	this.type = 0;
 	this.border = new THREE.Line(geometry);
 	this.object = 0;
 	this.edges = [];
@@ -500,10 +500,29 @@ var room_Part = function(){
 }
 
 var door_Part = function(){
+	this.type = 1;
 	this.elevation = 0;
-	this.object = new THREE.Mesh(new THREE.BoxGeometry( 16, 16, 16 ));
+	this.widget = new THREE.Mesh(new THREE.BoxGeometry( 16, 16, 16 ));
+	this.widget.dad = this;
+	this.object = 0;
 	this.room_A = 0;
 	this.room_B = 0;
+	this.width = 128;
+	this.height = 128;
+	this.base = 0;
+	this.rotation = 0;
+	this.generate_object = function(){
+		this.object = new THREE.Mesh(new THREE.BoxGeometry( this.width, this.height, 2*Math.max(this.room_A.width,this.room_B.width) ));
+		this.object.geometry.rotateY(-this.rotation);
+		this.object.geometry.translate(this.widget.position.x,this.widget.position.y,this.widget.position.z);
+		this.object.geometry.translate(0,this.height/2+this.base+Math.max(this.room_A.elevation,this.room_B.elevation),0);
+		
+		//rotate to face normal
+	}
+	this.adjust = function(){}
+	this.move = function(x,y,z){
+		this.widget.position.add(new THREE.Vector3(x,y,z));
+	}
 }
 
 
@@ -536,14 +555,21 @@ var Selector = function(){
 		}
 		gui_edit.remove(this.Folder);
 		this.Folder = gui_edit.addFolder('Selected');
-		this.Folder.add(this.object.border, 'visible',0,1);
-		this.Folder.add(this.object, 'add_edge').name("Add Corner");
-		this.Folder.add(this.object, 'remove_edge').name("Remove Corner");
-		this.Folder.add(this.object, 'remove').name("Remove This");
-		this.Folder.add(this.object, "elevation").step(16).name("Elevation").listen().onFinishChange(function(value){this.object.set_height(value)});
-		this.Folder.add(this.object, "height").step(64).name("Room Height");
+		if(this.object.type==0){
+			this.Folder.add(this.object.border, 'visible',0,1);
+			this.Folder.add(this.object, 'add_edge').name("Add Corner");
+			this.Folder.add(this.object, 'remove_edge').name("Remove Corner");
+			this.Folder.add(this.object, 'remove').name("Remove This");
+			this.Folder.add(this.object, "elevation").step(16).name("Elevation").listen().onFinishChange(function(value){this.object.set_height(value)});
+			this.Folder.add(this.object, "height").step(64).name("Room Height");
 		
-		this.Folder.add(this.object, "width").step(4);
+			this.Folder.add(this.object, "width").step(4);
+		}
+		if(this.object.type==1){
+			this.Folder.add(this.object, "height").step(64).name("Door Height");
+			this.Folder.add(this.object, "base").step(16).name("Door Base");
+			this.Folder.add(this.object, "width").step(64).name("Door Width");
+		}
 		//this.Folder.add(this.object, 'sign', 0, 1);
 		
 		

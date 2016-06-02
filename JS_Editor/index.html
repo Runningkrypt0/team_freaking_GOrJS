@@ -1,3 +1,5 @@
+<meta charset="UTF-8"> 
+<html lang="en">
 <html>
 	<head>
 		<title>Artificial Amateur</title>
@@ -47,6 +49,12 @@
 						objects[p].generate_object();
 						//if(objects[p].sign){
 							me = me.union(new ThreeBSP(objects[p].object.geometry));
+						//}
+					}
+					for(p = 0; p < doors.length;p++){
+						doors[p].generate_object();
+						//if(objects[p].sign){
+							me = me.union(new ThreeBSP(doors[p].object.geometry));
 						//}
 					}
 					//for(n = 0; n < objects.length;n++){
@@ -259,9 +267,6 @@
 					displayEdit : function(){
 						roster.CONTROL_MODE = 0;
 						collisionObjects = [];
-						for(i=0;i<objects.length;i++){
-							collisionObjects.push(objects[i].border);
-						}
 						
 						if(!scene){
 							for(i = 0; i < objects.length;i++){
@@ -272,10 +277,12 @@
 						
 						reality = scene.clone();
 						for(i = 0; i < objects.length;i++){
+							collisionObjects.push(objects[i].border);
 							reality.add(objects[i].border);
 						}
 						for(i = 0; i < doors.length;i++){
-							reality.add(doors[i].object);
+							collisionObjects.push(doors[i].widget);
+							reality.add(doors[i].widget);
 						}
 					},
 					calculate_merges : function(){
@@ -302,7 +309,16 @@
 											var nD = new door_Part();
 											nD.room_A = this.part_A;
 											nD.room_B = this.part_B;
-											nD.object.position.copy(position);
+											nD.move(position.x,position.y,position.z);
+											var temp = mesh.geometry.vertices[1].clone().sub(mesh.geometry.vertices[0]);
+											var angle = Math.atan2(temp.z,temp.x);
+	
+											if(angle>Math.PI){
+												angle-=Math.PI*2;
+											}else if(angle<-Math.PI){
+												angle+=Math.PI*2;
+											}
+											nD.rotation = angle;//+Math.PI/2;
 											doors.push(nD);
 											roster.displayEdit();
 										}
@@ -359,8 +375,7 @@
 				roomFolder.add(roster, "displayTest").name("Display Inset Borders");
 				roomFolder.add(roster, "displaySurface").name("Display Preview");
 				var doorFolder = gui_edit.addFolder("Edit Doors");
-				doorFolder.add(roster, "addPart").name("Add Door");
-				doorFolder.add(roster, "addDoor").name("Edit Door Layout");
+				doorFolder.add(roster, "addDoor").name("Add Door");
 				//var renderFolder = gui.addFolder("Display Options");
 				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
 				//renderFolder.add(roster, "displayEdit").name("Edit:");
