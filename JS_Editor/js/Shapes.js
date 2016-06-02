@@ -324,6 +324,7 @@ var room_Part = function(){
 		
 	}
 	this.add = function(position){
+		
 		//determine part from position
 		var n, temp, test_vector_A, test_vector_B, test_angle_A, test_angle_B;
 		for( n=0;n<this.border.geometry.vertices.length-1;n++){
@@ -341,7 +342,7 @@ var room_Part = function(){
 		}
 		roster.CONTROL_MODE = 0;
 		var geometry = this.border.geometry.clone();
-		geometry.vertices.splice(n+1,0,temp);
+		geometry.vertices.splice(n+1,0,SnapToGrid(temp));
 		
 		
 		
@@ -482,7 +483,7 @@ var room_Part = function(){
 		this.edges = [];
 		//collisionObjects = [];
 		for(var i=1;i<this.border.geometry.vertices.length;i++){
-			var box = new THREE.Mesh(new THREE.CubeGeometry(16,16,16));
+			var box = new THREE.Mesh(new THREE.CubeGeometry(16,16,16),cornerMaterial);
 			box.position.x = this.border.geometry.vertices[i].x;
 			box.position.y = this.border.geometry.vertices[i].y;
 			box.position.z = this.border.geometry.vertices[i].z;
@@ -516,7 +517,7 @@ var door_Part = function(){
 	this.type = 1;
 	this.enabled = true;
 	this.elevation = 0;
-	this.widget = new THREE.Mesh(new THREE.BoxGeometry( 16, 16, 16 ));
+	this.widget = new THREE.Mesh(new THREE.BoxGeometry( 16, 16, 16 ),doorMaterial);
 	this.widget.dad = this;
 	this.object = 0;
 	this.room_A = 0;

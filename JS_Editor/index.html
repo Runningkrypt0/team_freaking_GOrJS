@@ -133,6 +133,8 @@
 				}
 				function loadFromText(text){
 					objects=[];
+					merges=[];
+					doors=[];
 					var state = 0;
 					var focus = 0;
 					var geometry = undefined;
@@ -162,6 +164,44 @@
 							var C = tuple[0];
 							focus = tuple[1];
 							details = [parseInt(B),parseInt(C)];
+						}
+						else if(thought=="D"){
+							if(state==1){
+								if(geometry!==undefined){
+									geometry.vertices.push(geometry.vertices[0].clone());
+									objects.push(new room_Part());
+									objects[objects.length-1].border = new THREE.Line(geometry);
+									objects[objects.length-1].border.dad = objects[objects.length-1];
+									objects[objects.length-1].height = details[0];
+									objects[objects.length-1].width = details[1];
+									objects[objects.length-1].elevation = geometry.vertices[0].y;
+								}
+							}
+							state = 0;
+							var nD = new door_Part();
+							var tuple = gatherThouhts(text,focus);
+							var B = tuple[0];
+							focus = tuple[1];
+							var tuple = gatherThouhts(text,focus);
+							var C = tuple[0];
+							focus = tuple[1];
+							var tuple = gatherThouhts(text,focus);
+							var D = tuple[0];
+							focus = tuple[1];
+							nD.move(parseInt(B),parseInt(C),parseInt(D));
+							var tuple = gatherThouhts(text,focus);
+							var B = tuple[0];
+							focus = tuple[1];
+							var tuple = gatherThouhts(text,focus);
+							var C = tuple[0];
+							focus = tuple[1];
+							var tuple = gatherThouhts(text,focus);
+							var D = tuple[0];
+							focus = tuple[1];
+							nD.height = parseInt(B);
+							nD.width = parseInt(C);
+							nD.base = parseInt(D);
+							doors.push(nD);
 						}
 						else if(state==1){
 							var tuple = gatherThouhts(text,focus);
@@ -205,13 +245,43 @@
 					var newobject = new room_Part();
 					newobject.move(position.x,0,position.z)
 					objects.push(newobject);
+					newobject.snap();
 					roster.displayEdit();
 					selected.update(newobject);
 				}
 				
+				var gridMaterial = new THREE.LineBasicMaterial({color: new THREE.Color(.1,.1,.1)});
+				gridMaterial.transparent = true;
+				gridMaterial.opacity = .6
+				var cornerMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(.1,.1,.4)});
+				var doorMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(.4,.1,.1)});
+				
+				function VisibleGridCreator(size,width){
+					var visibleGrid = new THREE.Object3D();
+					//do horizontal and vertical lines
+					for(var i=0;i<Math.floor(width/size)+1;i++){
+						var geo = new THREE.Geometry();
+						geo.vertices.push(
+							new THREE.Vector3(-width/2,-.5,i*size-width/2),
+							new THREE.Vector3(width/2,-.5,i*size-width/2)
+						)
+						visibleGrid.children.push(new THREE.Line(geo,gridMaterial));
+						geo = new THREE.Geometry();
+						geo.vertices.push(
+							new THREE.Vector3(i*size-width/2,-.5,-width/2),
+							new THREE.Vector3(i*size-width/2,-.5,width/2)
+						)
+						visibleGrid.children.push(new THREE.Line(geo,gridMaterial));
+					}
+					reality.add(visibleGrid);
+				}
+				
+				
+				
 				var roster = {
 					CONTROL_MODE : 0,
-					GRID_SIZE : 32,
+					GRID_SIZE : 128,
+					GRID_ENABLED : true,
 					RESET_MODE : function(){
 					
 					},
@@ -234,6 +304,9 @@
 								reality.add( walls[i] );
 							}
 						}
+						if(roster.GRID_ENABLED){
+							VisibleGridCreator(roster.GRID_SIZE,8192);
+						}
 					},
 					save : function(){
 						//save parts as flattened csv vertex lists
@@ -245,6 +318,15 @@
 								total += ","+objects[i].border.geometry.vertices[j].y;
 								total += ","+objects[i].border.geometry.vertices[j].z;
 							}
+						}
+						for(var i = 0; i < doors.length;i++){
+							total += ",D,"
+								+doors[i].widget.position.x+","
+								+doors[i].widget.position.y+","
+								+doors[i].widget.position.z+","
+								+doors[i].height+","
+								+doors[i].width+","
+								+doors[i].base+","
 						}
 						makeTextFile(total);
 					},
@@ -269,12 +351,12 @@
 						roster.CONTROL_MODE = 0;
 						collisionObjects = [];
 						
-						if(!scene){
-							for(i = 0; i < objects.length;i++){
-								objects[i].object.material.transparent = true;
-							}
-							return;
-						}
+						//if(!scene){
+						//	for(i = 0; i < objects.length;i++){
+						//		objects[i].object.material.transparent = true;
+						//	}
+						//	return;
+						//}
 						
 						reality = scene.clone();
 						for(i = 0; i < objects.length;i++){
@@ -286,6 +368,9 @@
 							doors[i].snap();
 							collisionObjects.push(doors[i].widget);
 							reality.add(doors[i].widget);
+						}
+						if(roster.GRID_ENABLED){
+							VisibleGridCreator(roster.GRID_SIZE,8192);
 						}
 					},
 					calculate_merges : function(){
@@ -353,14 +438,17 @@
 						//roster.displayEdit();
 					},						
 				}
-				var newobject = new room_Part();
-				objects.push(newobject);
+				
+				scene = new THREE.Scene();
+				
+				
 				
 				var gui_edit = new dat.GUI();
 				var gui_settings = new dat.GUI();
 				gui_settings.add(roster, "save").name("Save");
 				gui_settings.add(roster, "load").name("Load");
-				gui_settings.add(roster, "GRID_SIZE").step(8).name("Grid Size");
+				var gSize = gui_settings.add(roster, "GRID_SIZE").name("Grid Size").onFinishChange(function(value){roster.GRID_SIZE = Math.pow(2.0,Math.floor(Math.log2(value)));gSize.updateDisplay();roster.displayEdit()});
+				gui_settings.add(roster, 'GRID_ENABLED',0,1).onFinishChange(function(value){roster.displayEdit()});
 				gui_settings.add(roster, "displayEdit").name("Display Plans");
 				gui_settings.add(roster, "displaySurface").name("Display Preview");
 				
@@ -370,18 +458,23 @@
 				roomFolder.add(roster, "addDoor").name("Add Door");
 				roomFolder.add(roster, "removePart").name("Delete Room/Door");
 				
+				//roster.chosen = gui_edit.add(roster, "index").step(1).listen().onFinishChange(function(value){selected.update(objects[value])});
+				
 				//var renderFolder = gui.addFolder("Display Options");
 				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
 				//renderFolder.add(roster, "displayEdit").name("Edit:");
 				//renderFolder.add(roster, "displaySurface").name("Preview:");
 				//renderFolder.add(roster, "displayWalls").name("Render:");
 								
-				
-				
-				roster.chosen = gui_edit.add(roster, "index").step(1).listen().onFinishChange(function(value){selected.update(objects[value])});
-				
 				var selected = new Selector();
 				var selectedPoint = 0;
+				
+				var newobject = new room_Part();
+				objects.push(newobject);
+				
+				
+				
+				
 				//var cubeb = new THREE.CubeGeometry(40, 160, 40);
 				//negative.push(cubeb);
 				
