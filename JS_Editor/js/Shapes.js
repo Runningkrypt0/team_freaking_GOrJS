@@ -236,9 +236,9 @@ var room_Part = function(){
 	this.compare_edges = function(part){
 		
 		//compare radii
-		console.log("comparing...");
+		//console.log("comparing...");
 		if(part.center.clone().sub(this.center).length()>this.radius+part.radius){
-			console.log("trivial");
+			//console.log("trivial");
 			return [];
 		}
 		shared_edges = [];
@@ -288,7 +288,7 @@ var room_Part = function(){
 				}
 				
 				if(valid){
-					console.log(i,j)
+					//console.log(i,j)
 					//c is in line
 					if((test_edge_B.x<=1&&test_edge_B.x>=0)||(test_edge_C.x<=1&&test_edge_C.x>=0)||(test_edge_B.x<=0&&test_edge_C.x>=1)||(test_edge_C.x<=0&&test_edge_B.x>=1)){
 						
@@ -525,7 +525,6 @@ var door_Part = function(){
 	}
 }
 
-
 var Selector = function(){
 	this.object = 0;
 	this.type = 0;
@@ -588,8 +587,6 @@ var Selector = function(){
 		this.update(objects[id]);
 	}
 }
-
-
 
 var Room = function(){
 	this.geometry = new THREE.CubeGeometry(180, 180, 180);

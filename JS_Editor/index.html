@@ -310,9 +310,9 @@
 											nD.room_A = this.part_A;
 											nD.room_B = this.part_B;
 											nD.move(position.x,position.y,position.z);
-											var temp = mesh.geometry.vertices[1].clone().sub(mesh.geometry.vertices[0]);
+											var temp = this.geometry.vertices[1].clone().sub(this.geometry.vertices[0]);
 											var angle = Math.atan2(temp.z,temp.x);
-	
+											console.log(angle);
 											if(angle>Math.PI){
 												angle-=Math.PI*2;
 											}else if(angle<-Math.PI){
