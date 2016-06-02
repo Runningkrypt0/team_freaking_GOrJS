@@ -464,25 +464,37 @@
 			var intersects = raycaster.intersectObjects( collisionObjects );
 
 			if (event.button==0 && intersects.length > 0 ) {
+				//move
 				
-				intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
-				intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
-				
-				console.log("Selected Object");
-				
-				selected.update(intersects[0].object.dad);
-				selectedPoint = intersects[ 0 ].point;
-				
-				Grid.geometry.translate(0,selectedPoint.y,0);
-				
-				document.addEventListener( 'mousemove', onMouseMoveDrag, false );
-				document.addEventListener( 'mouseup', onMouseUpDrag, false );
+				if(roster.CONTROL_MODE==0){
+					intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
+					intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
+					
+					console.log("Selected Object");
+					
+					selected.update(intersects[0].object.dad);
+					selectedPoint = intersects[ 0 ].point;
+					
+					Grid.geometry.y = selectedPoint.y;
+					
+					document.addEventListener( 'mousemove', onMouseMoveDrag, false );
+					document.addEventListener( 'mouseup', onMouseUpDrag, false );
+				}else if(roster.CONTROL_MODE==1){
+					//add
+					intersects[0].point.x = Math.round(intersects[0].point.x/32)*32
+					intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
+					console.log("Created at: ", intersects[0].point)
+					intersects[0].object.dad.add(intersects[0].point);
+				}else if(roster.CONTROL_MODE==2){
+					console.log("Killed: ", intersects[0].object)
+					intersects[0].object.dad.remove(intersects[0].object);
+				}
 			}
 			else{
 				if ( scope.enabled === false ) return;
 
 				event.preventDefault();
-
+				
 				if ( event.button === scope.mouseButtons.ORBIT ) {
 
 					if ( scope.enableRotate === false ) return;
@@ -622,6 +634,7 @@
 				intersects[0].point.z = Math.round(intersects[0].point.z/32)*32
 				selected.object.move(intersects[0].point.x-selectedPoint.x, 0, intersects[0].point.z-selectedPoint.z);
 			}
+			console.log(collisionObjects);
 			
 			Grid.geometry.translate(0,-selectedPoint.y,0);
 			

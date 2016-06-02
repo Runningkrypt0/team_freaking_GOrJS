@@ -88,7 +88,6 @@
 				checkFileAPI();
 				function readText(filePath) {
 					var output = ""; //placeholder for text output
-					console.log("opening")
 					if(filePath.files && filePath.files[0]) {           
 						reader.onload = function (e) {
 							output = e.target.result;
@@ -134,10 +133,7 @@
 						var tuple = gatherThouhts(text,focus);
 						thought = tuple[0];
 						focus = tuple[1];
-						console.log(thought);
 						if(thought=="O"){
-							
-							console.log("new object");
 							if(state==1){
 								if(geometry!==undefined){
 									geometry.vertices.push(geometry.vertices[0].clone());
@@ -191,10 +187,22 @@
 				
 				//var negative = [];
 				var objects = [];
+				var doors = [];
+				var merges = [];
 				
-				
+				var Grid = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000),new THREE.MeshBasicMaterial({color: 0xffff00,side: THREE.DoubleSide}));
+				Grid.geometry.rotateX(-Math.PI*0.5);
+				Grid.dad = {};
+				Grid.dad.add = function(position){
+					var newobject = new room_Part();
+					newobject.move(position.x,0,position.z)
+					objects.push(newobject);
+					roster.displayEdit();
+					selected.update(newobject);
+				}
 				
 				var roster = {
+					CONTROL_MODE : 0,
 					RESET_MODE : function(){
 					
 					},
@@ -249,6 +257,7 @@
 						}
 					},
 					displayEdit : function(){
+						roster.CONTROL_MODE = 0;
 						collisionObjects = [];
 						for(i=0;i<objects.length;i++){
 							collisionObjects.push(objects[i].border);
@@ -265,6 +274,51 @@
 						for(i = 0; i < objects.length;i++){
 							reality.add(objects[i].border);
 						}
+						for(i = 0; i < doors.length;i++){
+							reality.add(doors[i].object);
+						}
+					},
+					calculate_merges : function(){
+						merges = [];
+						for(var i = 0; i < objects.length;i++){
+							objects[i].update();
+						}
+						for(var i = 0; i < objects.length-1;i++){
+							for(var j = i+1; j < objects.length; j++){
+								if(i==j){continue;}
+								var edges = objects[i].compare_edges(objects[j]);
+								if(edges.length>0){
+									console.log("Pair:",i,j)
+									for(var k=0;k<edges.length/2;k++){
+										console.log("-",edges[2*k],edges[2*k+1])
+										var geometry = new THREE.Geometry();
+										geometry.vertices.push(edges[2*k]);
+										geometry.vertices.push(edges[2*k+1]);
+										var mesh = new THREE.Line(geometry);
+										mesh.part_A = objects[i];
+										mesh.part_B = objects[j];
+										mesh.dad = mesh;
+										mesh.add = function(position){
+											var nD = new door_Part();
+											nD.room_A = this.part_A;
+											nD.room_B = this.part_B;
+											nD.object.position.copy(position);
+											doors.push(nD);
+											roster.displayEdit();
+										}
+										merges.push(mesh);
+									}
+									
+								}
+							}
+						}
+					},
+					addDoor : function(){
+						roster.CONTROL_MODE = 1;
+						roster.calculate_merges();
+						collisionObjects = merges.slice(0);
+						//reality = scene.clone();
+						
 					},
 					displayTest : function(){
 						collisionObjects = [];
@@ -276,16 +330,19 @@
 						}
 					},
 					addPart: function() {
-						var newobject = new room_Part();
-						objects.push(newobject);
 						roster.displayEdit();
+						collisionObjects = [Grid];
+						roster.CONTROL_MODE = 1;
+						//var newobject = new room_Part();
+						//objects.push(newobject);
+						//roster.displayEdit();
 					},
 					removePart: function(){
-						objects.splice(this.index,1);
 						roster.displayEdit();
-					}
-					
-					
+						roster.CONTROL_MODE = 2;
+						//objects.splice(this.index,1);
+						//roster.displayEdit();
+					},						
 				}
 				var newobject = new room_Part();
 				objects.push(newobject);
@@ -298,12 +355,12 @@
 				
 				var roomFolder = gui_edit.addFolder("Edit Rooms");
 				roomFolder.add(roster, "addPart").name("Add Room");
-				roomFolder.add(roster, "displayEdit").name("Edit Room Layout");
+				roomFolder.add(roster, "removePart").name("Delete Room");
 				roomFolder.add(roster, "displayTest").name("Display Inset Borders");
 				roomFolder.add(roster, "displaySurface").name("Display Preview");
 				var doorFolder = gui_edit.addFolder("Edit Doors");
-				roomFolder.add(roster, "addPart").name("Add Door");
-				roomFolder.add(roster, "displayEdit").name("Edit Door Layout");
+				doorFolder.add(roster, "addPart").name("Add Door");
+				doorFolder.add(roster, "addDoor").name("Edit Door Layout");
 				//var renderFolder = gui.addFolder("Display Options");
 				//renderFolder.add(roster, "_WIREFRAME_").name("Wire Frame Mode");
 				//renderFolder.add(roster, "displayEdit").name("Edit:");
@@ -318,9 +375,6 @@
 				var selectedPoint = 0;
 				//var cubeb = new THREE.CubeGeometry(40, 160, 40);
 				//negative.push(cubeb);
-				
-				var Grid = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000),new THREE.MeshBasicMaterial({color: 0xffff00,side: THREE.DoubleSide}));
-				Grid.geometry.rotateX(-Math.PI*0.5);
 				
 				
 
@@ -408,7 +462,7 @@
 					
 					//select object
 					raycaster = new THREE.Raycaster();
-					raycaster.linePrecision = 20;
+					raycaster.linePrecision = 30;
 					mouse = new THREE.Vector2();
 					
 					//document.addEventListener( 'touchstart', onDocumentTouchStart, false );

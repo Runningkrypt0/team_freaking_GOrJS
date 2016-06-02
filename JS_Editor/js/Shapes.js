@@ -209,11 +209,10 @@ var room_Part = function(){
 	this.width = 8;
 	this.elevation = 0;
 	this.height = 192;
+	this.center = new THREE.Vector3();
+	this.radius = 0;
 	
 	this.border.dad = this;
-	
-	
-	this.color = GenerateColor();
 	
 	this.update = function(){
 		this.border.geometry.vertices[0].copy(this.border.geometry.vertices[this.border.geometry.vertices.length-1]);
@@ -221,34 +220,178 @@ var room_Part = function(){
 		this.border.geometry.dynamic = true;
 		this.border.geometry.elementsNeedUpdate = true;
 		this.border.geometry.computeLineDistances();
+		this.center.x = 0;this.center.y = 0;this.center.z = 0;
+		for(var i=0;i<this.border.geometry.vertices.length-1;i++){
+			this.center.add(this.border.geometry.vertices[i]);
+		}
+		this.center.divideScalar(this.border.geometry.vertices.length-1);
+		this.radius = 0;
+		for(var i=0;i<this.border.geometry.vertices.length-1;i++){
+			if(this.border.geometry.vertices[i].clone().sub(this.center).length()>this.radius){
+				this.radius = this.border.geometry.vertices[i].clone().sub(this.center).length();
+			}
+		}
 	}
 	
-	this.add_edge = function(n=-1){
-		console.log(this.border.geometry.vertices);
-		if(n<0){
-			n = Math.floor(Math.random()*(this.border.geometry.vertices.length-1));
+	this.compare_edges = function(part){
+		
+		//compare radii
+		console.log("comparing...");
+		if(part.center.clone().sub(this.center).length()>this.radius+part.radius){
+			console.log("trivial");
+			return [];
 		}
-		console.log(n);
+		shared_edges = [];
 		
-		var temp = this.border.geometry.vertices[n+1].clone().add(this.border.geometry.vertices[n]);
-		temp.divideScalar(2);
+		for(var i=0;i<part.border.geometry.vertices.length-1;i++){
+			var test_edge_A = part.border.geometry.vertices[i].clone().sub(part.border.geometry.vertices[i+1]);
+			test_edge_A.y = 0;
+			for(var j=0;j<this.border.geometry.vertices.length-1;j++){
+				var test_edge_B = this.border.geometry.vertices[j].clone().sub(part.border.geometry.vertices[i+1]);
+				var test_edge_C = this.border.geometry.vertices[j+1].clone().sub(part.border.geometry.vertices[i+1]);
+				test_edge_B.y = 0;
+				test_edge_C.y = 0;
+
+				var valid = true;
+				if(test_edge_A.x!=0){
+					test_edge_B.x = test_edge_B.x/test_edge_A.x;
+				}else if(test_edge_B.x!=0){
+					valid = false;
+				}
+				if(test_edge_A.z!=0){
+					test_edge_B.z = test_edge_B.z/test_edge_A.z;
+				}else if(test_edge_B.z!=0){
+					valid = false;
+				}
+				if(test_edge_B.x!=0&&test_edge_B.z!=0&&Math.abs(test_edge_B.x-test_edge_B.z)>.001){
+					valid = false;
+				}
+				if(test_edge_B.x==0){
+					test_edge_B.x=test_edge_B.z;
+				}
+				
+				if(test_edge_A.x!=0){
+					test_edge_C.x = test_edge_C.x/test_edge_A.x;
+				}else if(test_edge_C.x!=0){
+					valid = false;
+				}
+				if(test_edge_A.z!=0){
+					test_edge_C.z = test_edge_C.z/test_edge_A.z;
+				}else if(test_edge_C.z!=0){
+					valid = false;
+				}
+				if(test_edge_C.x!=0&&test_edge_C.z!=0&&Math.abs(test_edge_C.x-test_edge_C.z)>.001){
+					valid = false;
+				}
+				if(test_edge_C.x==0){
+					test_edge_C.x=test_edge_C.z;
+				}
+				
+				if(valid){
+					console.log(i,j)
+					//c is in line
+					if((test_edge_B.x<=1&&test_edge_B.x>=0)||(test_edge_C.x<=1&&test_edge_C.x>=0)||(test_edge_B.x<=0&&test_edge_C.x>=1)||(test_edge_C.x<=0&&test_edge_B.x>=1)){
+						
+						//a point is in region
+						//they touch
+						//find borders
+						var border_low = Math.max(Math.min(test_edge_B.x,test_edge_C.x),0);
+						var border_high = Math.min(Math.max(test_edge_B.x,test_edge_C.x),1);
+						if(border_low==border_high){
+							//point touch, ignoreCase
+							continue;
+						}
+						console.log("-valid")
+						shared_edges.push(test_edge_A.clone().multiplyScalar(border_low).add(part.border.geometry.vertices[i+1]));
+						shared_edges.push(test_edge_A.clone().multiplyScalar(border_high).add(part.border.geometry.vertices[i+1]));
+					}
+				}
+			}
+		}
 		
+		return shared_edges;
+	}
+	
+	this.add_edge = function(){
+		collisionObjects = [this.border];
+		roster.CONTROL_MODE = 1;
+		
+	}
+	this.remove_edge = function(){
+		collisionObjects = [];
+		this.adjust();
+		roster.CONTROL_MODE = 2;
+		
+	}
+	this.add = function(position){
+		//determine part from position
+		var temp;
+		var n;
+		for( n=0;n<this.border.geometry.vertices.length-1;n++){
+			var test_vector_A = this.border.geometry.vertices[n+1].clone().sub(this.border.geometry.vertices[n]);
+			var test_vector_B = position.clone().sub(this.border.geometry.vertices[n]);
+			var test_angle_A = test_vector_A.clone().normalize();
+			var test_angle_B = test_vector_B.clone().normalize();
+			if(test_angle_A.dot(test_angle_B)>.99&&test_vector_B.length()<test_vector_A.length()&&test_vector_B.length()>0){//perfect
+				temp = position.clone();
+				break;
+			}
+		}
+		if(temp===undefined){
+			return;
+		}
+		roster.CONTROL_MODE = 0;
 		var geometry = this.border.geometry.clone();
 		geometry.vertices.splice(n+1,0,temp);
 		
-		console.log(geometry.vertices);
 		
-		reality.remove(this.border);
+		
 		this.border = new THREE.Line(geometry);
 		this.border.dad = this;
-		reality.add(this.border);
+		roster.displayEdit();
+		this.update();
+		this.adjust();
+	}
+	this.remove = function(chosen){
+		//determine part from position
+		var n;
+		if(chosen==this.border||chosen===undefined){
+			for( n=0;n<objects.length;n++){
+				if(objects[n]===this){
+					objects.splice(n,1)
+					roster.CONTROL_MODE = 0;
+					roster.displayEdit();
+					return;
+				}
+			}
+			
+		}
 		
+		var geometry = this.border.geometry.clone();
+		for( n=0;n<this.edges.length;n++){
+			if(this.edges[n]===chosen){
+				geometry.vertices.splice(n+1,1);
+				roster.CONTROL_MODE = 0;
+				break;
+			}
+		}
+		
+		
+		console.log(this.border);
+		this.border = new THREE.Line(geometry);
+		this.border.dad = this;
+		roster.displayEdit();
+		console.log(this.border);
+		this.update();
 		this.adjust();
 	}
 	
 	this.move = function(x,y,z){
 		for(var i=0;i<this.border.geometry.vertices.length;i++){
 			this.border.geometry.vertices[i].add(new THREE.Vector3(x,y,z));
+			if(this.edges[i]!==undefined){
+				this.edges[i].position.add(new THREE.Vector3(x,y,z));
+			}
 		}
 		this.update();
 	}
@@ -328,9 +471,8 @@ var room_Part = function(){
 	
 	this.adjust = function(){
 		this.update();
-		roster.displayEdit();
 		this.edges = [];
-		collisionObjects = [];
+		//collisionObjects = [];
 		for(var i=1;i<this.border.geometry.vertices.length;i++){
 			var box = new THREE.Mesh(new THREE.CubeGeometry(16,16,16));
 			box.position.x = this.border.geometry.vertices[i].x;
@@ -340,6 +482,10 @@ var room_Part = function(){
 			box.dad = box;
 			box.target = this.border.geometry.vertices[i]
 			box.owner = this;
+			box.remove = function(me){
+				this.owner.remove(this);
+				
+			}
 			box.move = function(x,y,z){
 				this.target.add(new THREE.Vector3(x,y,z));
 				this.position.add(new THREE.Vector3(x,y,z));
@@ -355,6 +501,9 @@ var room_Part = function(){
 
 var door_Part = function(){
 	this.elevation = 0;
+	this.object = new THREE.Mesh(new THREE.BoxGeometry( 16, 16, 16 ));
+	this.room_A = 0;
+	this.room_B = 0;
 }
 
 
@@ -378,6 +527,8 @@ var Selector = function(){
 		if(anything.non_focusable){
 			return;
 		}
+		roster.displayEdit();
+		this.object.adjust();
 		for(i=0;i<objects.length;i++){
 			if (objects[i]===this.object){
 				roster.index=i;
@@ -385,10 +536,10 @@ var Selector = function(){
 		}
 		gui_edit.remove(this.Folder);
 		this.Folder = gui_edit.addFolder('Selected');
-		this.Folder.add(this.object, 'adjust').name("Edit Border");
-		this.Folder.add(this.object, 'add_edge').name("Add Corner");
 		this.Folder.add(this.object.border, 'visible',0,1);
-		this.Folder.add(roster, 'removePart').name("Delete");
+		this.Folder.add(this.object, 'add_edge').name("Add Corner");
+		this.Folder.add(this.object, 'remove_edge').name("Remove Corner");
+		this.Folder.add(this.object, 'remove').name("Remove This");
 		this.Folder.add(this.object, "elevation").step(16).name("Elevation").listen().onFinishChange(function(value){this.object.set_height(value)});
 		this.Folder.add(this.object, "height").step(64).name("Room Height");
 		
