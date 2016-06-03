@@ -49,10 +49,25 @@ func hammer_write_face(file *os.File, face *hammer_face, id int){
 	file.WriteString(hammer_print_vector(&face.B));
 	file.WriteString(" ");
 	file.WriteString(hammer_print_vector(&face.C));
+	
+	uaxis := Vector3{}
+	vaxis := Vector3{}
+	vector_clone(&uaxis,&face.A)
+	vector_clone(&uaxis,&face.C)
+	vector_sub(&uaxis,&face.B);
+	vector_normalize(&uaxis)
+	vector_sub(&vaxis,&face.B);
+	vector_normalize(&vaxis)
+	
 	file.WriteString(`"
 			"material" "TOOLS/TOOLSNODRAW"
-			"uaxis" "[0 1 0 0] 0.25"
-			"vaxis" "[0 0 -1 0] 0.25"
+			"uaxis" "[`);
+	//file.WriteString(strconv.FormatFloat(float64(uaxis.X), 'f', 2, 32)+" "+strconv.FormatFloat(float64(uaxis.Y), 'f', 2, 32)+" "+strconv.FormatFloat(float64(uaxis.Z), 'f', 2, 32))
+	file.WriteString(`1 0 0 0]0.25"
+			"vaxis" "[`);
+	
+	//file.WriteString(strconv.FormatFloat(float64(vaxis.X), 'f', 2, 32)+" "+strconv.FormatFloat(float64(vaxis.Y), 'f', 2, 32)+" "+strconv.FormatFloat(float64(vaxis.Z), 'f', 2, 32))	
+	file.WriteString(`0 1 0 0]0.25"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -102,6 +117,7 @@ func hammer_fix_solid(solid *hammer_solid){
 
 func hammer_write_solid(file *os.File, solid *hammer_solid, id int){
 	//write header
+	
 	file.WriteString(hammer_solid_header);
 	file.WriteString(strconv.Itoa(id));
 	file.WriteString(`"
