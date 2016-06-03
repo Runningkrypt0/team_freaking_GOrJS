@@ -312,7 +312,7 @@
 						//save parts as flattened csv vertex lists
 						var total = "";
 						for(var i = 0; i < objects.length;i++){
-							total += ",O," + objects[i].height +","+objects[i].width;
+							total += ",O," + objects[i].height +","+objects[i].width+","+objects[i].elevation;
 							for(var j = 0; j < objects[i].border.geometry.vertices.length-1;j++){
 								total += ","+objects[i].border.geometry.vertices[j].x;
 								total += ","+objects[i].border.geometry.vertices[j].z;
