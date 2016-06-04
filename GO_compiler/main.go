@@ -80,15 +80,34 @@ func make_Stuff(file *os.File){
 			}
 			
 			fmt.Printf("%d  #################\n",new_Floor.Positions.Length)
-			holder = inset(holder, float64(new_Floor.Width))
+			inset_holder := inset(holder, float64(new_Floor.Width))
 			
-			for i:=0; i<len(holder); i++ {
-				new_Floor.Positions.Append(holder[i])
+			for i:=0; i<len(inset_holder); i++ {
+				//h(i, i+1), i(i+1,i) also account for i+1 = 0
+				wall_vecs := make([]Vector3,4)
+				wall_vecs[0] = holder[i]
+				if(i<len(inset_holder)-1){
+					wall_vecs[1] = holder[i+1]
+					wall_vecs[2] = inset_holder[i+1]
+				}else{
+					wall_vecs[1] = holder[0]
+					wall_vecs[2] = inset_holder[0]
+				}
+				wall_vecs[3] = inset_holder[i]
+				
+				wall_solid := hammer_make_floor(wall_vecs,float64(new_Floor.Elevation),float64(new_Floor.Elevation)+float64(new_Floor.Height))
+				
+				hammer_fix_solid(&wall_solid)
+				my_world.Solids = append(my_world.Solids, wall_solid);
+				
+				new_Floor.Positions.Append(inset_holder[i])
 			}
 			
 			fmt.Printf("%d  #################\n",new_Floor.Positions.Length)
 			
 			new_Solids := decompose_Room(new_Floor)
+			
+			
 			
 			for n:=0; n<len(new_Solids);n++ {
 				hammer_fix_solid(&new_Solids[n])
@@ -229,18 +248,7 @@ func main() {
 	if(err!=nil){
 		log.Fatal(err)
 	}
-	
-	test_stack := Stack{}
-	test_stack.Push("are")
-	test_stack.Push("how")
-	test_stack.Push("hello")
-	test_stack.Append("you?")
-	fmt.Printf(test_stack.Bottom.Value.(string)+"\n")
-	fmt.Printf(test_stack.Pop().(string)+"\n")
-	fmt.Printf(test_stack.Pop().(string)+"\n")
-	fmt.Printf(test_stack.Pop().(string)+"\n")
-	fmt.Printf(test_stack.Pop().(string)+"\n")
-	
+
 	make_Stuff(f_parsed);
 	
 	f_parsed.Close();
