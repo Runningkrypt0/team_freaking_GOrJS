@@ -50,14 +50,12 @@ func hammer_write_face(file *os.File, face *hammer_face, id int){
 	file.WriteString(" ");
 	file.WriteString(hammer_print_vector(&face.C));
 	
-	uaxis := Vector3{}
-	vaxis := Vector3{}
-	vector_clone(&uaxis,&face.A)
-	vector_clone(&uaxis,&face.C)
-	vector_sub(&uaxis,&face.B);
-	vector_normalize(&uaxis)
-	vector_sub(&vaxis,&face.B);
-	vector_normalize(&vaxis)
+	uaxis := face.A.Clone()
+	vaxis := face.B.Clone()
+	uaxis.Sub(&face.B)
+	vaxis.Sub(&face.B)
+	uaxis.Normalize()
+	vaxis.Normalize()
 	
 	file.WriteString(`"
 			"material" "TOOLS/TOOLSNODRAW"
@@ -87,25 +85,25 @@ func hammer_fix_solid(solid *hammer_solid){
 	temp_B := Vector3{};
 	
 	for _,element := range solid.Faces {
-		vector_add(&centre,&element.A);
-		vector_add(&centre,&element.B);
-		vector_add(&centre,&element.C);
+		centre.Add(&element.A);
+		centre.Add(&element.B);
+		centre.Add(&element.C);
 		count = count + 3;
 	}
-	vector_div_sca(&centre, float32(count));
+	centre.Divide(float64(count));
 	
 	for i,element := range solid.Faces {
-		vector_clone(&temp_A,&element.A);
-		vector_clone(&temp_B,&element.C);
-		vector_sub(&temp_A,&element.B);
-		vector_sub(&temp_B,&element.B);
-		temp_A = vector_cross(&temp_A,&temp_B);
-		vector_clone(&temp_B,&centre);
-		vector_sub(&temp_B,&element.B);
-		if(vector_dot(&temp_A,&temp_B)>0){
+		temp_A = element.A.Clone()
+		temp_B = element.C.Clone()
+		temp_A.Sub(&element.B)
+		temp_B.Sub(&element.B)
+		temp_A = temp_A.Cross(&temp_B)
+		temp_B = centre.Clone()
+		temp_B.Sub(&element.B)
+		if(temp_A.Dot(&temp_B)>0){
 			//reverse
-			vector_clone(&solid.Faces[i].C,&element.B);
-			vector_clone(&solid.Faces[i].B,&element.C);
+			solid.Faces[i].C.Copy(&element.B)
+			solid.Faces[i].B.Copy(&element.C)
 			fmt.Printf("switch");
 		}
 	}

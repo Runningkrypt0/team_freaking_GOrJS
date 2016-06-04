@@ -5,60 +5,53 @@ import (
 )
 
 type Vector3 struct{
-	X float32;
-	Y float32;
-	Z float32;
+	X float64
+	Y float64
+	Z float64
 };
 
-func vector_div_sca(a *Vector3, b float32){
-	a.X = a.X/b;
-	a.Y = a.Y/b;
-	a.Z = a.Z/b;
+func (a *Vector3)Divide(b float64){
+	a.X = a.X/b
+	a.Y = a.Y/b
+	a.Z = a.Z/b
 }
 
-func vector_mul_sca(a *Vector3, b float32){
-	a.X = a.X*b;
-	a.Y = a.Y*b;
-	a.Z = a.Z*b;
+func (a *Vector3)Scale(b float64){
+	a.X = a.X*b
+	a.Y = a.Y*b
+	a.Z = a.Z*b
 }
 
-func vector_normalize(a *Vector3){
-	var distance float32 = a.X*a.X+a.Y*a.Y+a.Z*a.Z;
-	distance = float32(math.Sqrt(float64(distance)));
-	vector_div_sca(a,distance);
+func (a *Vector3)Normalize(){
+	distance := math.Sqrt(a.X*a.X+a.Y*a.Y+a.Z*a.Z)
+	a.Divide(distance)
 	
 }
 
-func vector_ortho_X(a *Vector3) Vector3{
-	return Vector3{a.X,-a.Z,a.Y};
+func (a *Vector3)Add(b *Vector3){
+	a.X = a.X + b.X
+	a.Y = a.Y + b.Y
+	a.Z = a.Z + b.Z
 }
-func vector_ortho_Y(a *Vector3) Vector3{
-	return Vector3{-a.Z,a.Y,a.X};
+
+func (a *Vector3)Sub(b *Vector3){
+	a.X = a.X - b.X
+	a.Y = a.Y - b.Y
+	a.Z = a.Z - b.Z
 }
-func vector_ortho_Z(a *Vector3) Vector3{
-	return Vector3{-a.Y,a.X,a.Z};
+
+func (a *Vector3)Copy(b *Vector3){
+	a.X = b.X
+	a.Y = b.Y
+	a.Z = b.Z
+}
+
+func (a *Vector3)Clone() Vector3{
+	return Vector3{a.X,a.Y,a.Z}
 }
 
 
-func vector_add(a *Vector3, b *Vector3){
-	a.X = a.X + b.X;
-	a.Y = a.Y + b.Y;
-	a.Z = a.Z + b.Z;
-}
-
-func vector_sub(a *Vector3, b *Vector3){
-	a.X = a.X - b.X;
-	a.Y = a.Y - b.Y;
-	a.Z = a.Z - b.Z;
-}
-
-func vector_clone(a *Vector3, b *Vector3){
-	a.X = b.X;
-	a.Y = b.Y;
-	a.Z = b.Z;
-}
-
-func vector_cross(a *Vector3, b *Vector3) Vector3{
+func (a *Vector3)Cross(b *Vector3) Vector3{
 	c := Vector3{};
 	c.X = a.Y*b.Z - a.Z*b.Y;
 	c.Y = a.Z*b.X - a.X*b.Z;
@@ -66,7 +59,7 @@ func vector_cross(a *Vector3, b *Vector3) Vector3{
 	return c;
 }
 
-func vector_dot(a *Vector3, b *Vector3) float32{
+func (a *Vector3)Dot(b *Vector3) float64{
 	return a.X*b.X+a.Y*b.Y+a.Z*b.Z;
 }
 

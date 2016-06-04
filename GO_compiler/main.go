@@ -67,7 +67,7 @@ func make_Stuff(file *os.File){
 				data, pos = read_Chunk(file,tpos);
 				temp = string(data[:len(data)-1])
 				value_Z, _ := strconv.Atoi(temp)
-				new_Floor.Positions.Push(Vector3{float32(value_X),float32(value_Z),float32(new_Floor.Elevation)})
+				new_Floor.Positions.Push(Vector3{float64(value_X),float64(value_Z),float64(new_Floor.Elevation)})
 				//fmt.Printf("-Point: %f %f %f\n",new_Floor.Positions[len(new_Floor.Positions)-1].X,new_Floor.Positions[len(new_Floor.Positions)-1].Y,new_Floor.Positions[len(new_Floor.Positions)-1].Z)
 			}
 			new_Solids := decompose_Room(new_Floor)
@@ -87,15 +87,15 @@ func make_Stuff(file *os.File){
 			data, pos = read_Chunk(file,pos);
 			temp = string(data[:len(data)-1])
 			X,_ := strconv.Atoi(temp)
-			new_Door.Position.X = float32(X);
+			new_Door.Position.X = float64(X);
 			data, pos = read_Chunk(file,pos);
 			temp = string(data[:len(data)-1])
 			Y,_ := strconv.Atoi(temp)
-			new_Door.Position.Y = float32(Y);
+			new_Door.Position.Y = float64(Y);
 			data, pos = read_Chunk(file,pos);
 			temp = string(data[:len(data)-1])
 			Z,_ := strconv.Atoi(temp)
-			new_Door.Position.Z = float32(Z);
+			new_Door.Position.Z = float64(Z);
 			
 			data, pos = read_Chunk(file,pos);
 			temp = string(data[:len(data)-1])
@@ -127,18 +127,14 @@ type room_Floor struct{
 }
 
 func validate(tri []Vector3, leftovers room_Floor) bool{
-	test_A := Vector3{}
-	test_B := Vector3{}
+	test_A := tri[0].Clone()
+	test_B := tri[2].Clone()
+	test_A.Sub(&tri[1])
+	test_B.Sub(&tri[1])
 	test_C := Vector3{}
 	
-	vector_clone(&test_A,&tri[0])
-	vector_sub(&test_A,&tri[1])
-	
-	vector_clone(&test_B,&tri[2])
-	vector_sub(&test_B,&tri[1])
-	
 	test_A.X, test_A.Y = -test_A.Y,test_A.X //normal
-	if(vector_dot(&test_A,&test_B)>=0){return false} //triangle has invalid wrapping
+	if(test_A.Dot(&test_B)>=0){return false} //triangle has invalid wrapping
 	fmt.Printf("--- Proper Wrapping\n")
 	test_A.X, test_A.Y = test_A.Y,-test_A.X //revert
 	
@@ -148,14 +144,14 @@ func validate(tri []Vector3, leftovers room_Floor) bool{
 	for dump!=nil {
 		//is point in triangle
 		temp := dump.Value.(Vector3)
-		vector_clone(&test_C,&temp)
-		vector_sub(&test_C,&tri[1])
+		test_C.Copy(&temp)
+		test_C.Sub(&tri[1])
 		
-		dot00 := vector_dot(&test_A, &test_A)
-		dot01 := vector_dot(&test_A, &test_B)
-		dot02 := vector_dot(&test_A, &test_C)
-		dot11 := vector_dot(&test_B, &test_B)
-		dot12 := vector_dot(&test_B, &test_C)
+		dot00 := test_A.Dot(&test_A)
+		dot01 := test_A.Dot(&test_B)
+		dot02 := test_A.Dot(&test_C)
+		dot11 := test_B.Dot(&test_B)
+		dot12 := test_B.Dot(&test_C)
 
 		// Compute barycentric coordinates
 		invDenom := 1 / (dot00 * dot11 - dot01 * dot01)
@@ -195,7 +191,7 @@ func decompose_Room(target room_Floor) (Triangles []hammer_solid){
 		if(validate(nT,target)){
 			//out ABC
 			fmt.Printf("-Valid\n")
-			Triangles = append(Triangles,hammer_make_floor(nT,float32(target.Elevation),float32(target.Elevation)-32))
+			Triangles = append(Triangles,hammer_make_floor(nT,float64(target.Elevation),float64(target.Elevation)-32))
 			nT[1] = nT[2]
 		}else{
 			fmt.Printf("-Invalid\n")

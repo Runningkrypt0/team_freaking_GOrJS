@@ -30,14 +30,13 @@ func hammer_make_box(dim *Vector3, pos *Vector3) hammer_solid{ //rotation?
 	return solid;
 }
 
-func hammer_make_wall(start *Vector3, end *Vector3, thickness float32) hammer_solid{ //rotation?
+func hammer_make_wall(start *Vector3, end *Vector3, thickness float64) hammer_solid{ //rotation?
 	
-	dim := Vector3{};
-	vector_clone(&dim,end);
-	vector_sub(&dim,start);
-	dim = vector_ortho_Z(&dim);
-	vector_normalize(&dim);
-	vector_mul_sca(&dim,thickness)
+	dim := end.Clone()
+	dim.Sub(start)
+	dim.X,dim.Y = -dim.Y,dim.X
+	dim.Normalize()
+	dim.Scale(thickness)
 	fmt.Printf(hammer_print_vector(&dim));
 	
 	//8 vectors
@@ -63,7 +62,7 @@ func hammer_make_wall(start *Vector3, end *Vector3, thickness float32) hammer_so
 	return solid;
 }
 
-func hammer_make_floor(Corners []Vector3, bottom float32, top float32) hammer_solid{
+func hammer_make_floor(Corners []Vector3, bottom float64, top float64) hammer_solid{
 	solid := hammer_solid{};
 	temp := hammer_face{};
 	for i,_ := range Corners {
@@ -84,9 +83,9 @@ func hammer_make_floor(Corners []Vector3, bottom float32, top float32) hammer_so
 
 func hammer_move_solid(solid *hammer_solid, vector *Vector3){
 	for i,_ := range solid.Faces {
-		vector_add(&solid.Faces[i].A,vector);
-		vector_add(&solid.Faces[i].B,vector);
-		vector_add(&solid.Faces[i].C,vector);
+		solid.Faces[i].A.Add(vector);
+		solid.Faces[i].B.Add(vector);
+		solid.Faces[i].C.Add(vector);
 	}
 }
 //func hammer_rotate_solid()
