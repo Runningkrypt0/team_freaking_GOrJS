@@ -70,6 +70,24 @@ func make_Stuff(file *os.File){
 				new_Floor.Positions.Push(Vector3{float64(value_X),float64(value_Z),float64(new_Floor.Elevation)})
 				//fmt.Printf("-Point: %f %f %f\n",new_Floor.Positions[len(new_Floor.Positions)-1].X,new_Floor.Positions[len(new_Floor.Positions)-1].Y,new_Floor.Positions[len(new_Floor.Positions)-1].Z)
 			}
+			
+			holder := make([]Vector3, new_Floor.Positions.Length)
+			
+			fmt.Printf("%d  #################\n",new_Floor.Positions.Length)
+			
+			for i:=0; i<len(holder); i++ {
+				holder[i] = new_Floor.Positions.Pop().(Vector3)
+			}
+			
+			fmt.Printf("%d  #################\n",new_Floor.Positions.Length)
+			holder = inset(holder, float64(new_Floor.Width))
+			
+			for i:=0; i<len(holder); i++ {
+				new_Floor.Positions.Append(holder[i])
+			}
+			
+			fmt.Printf("%d  #################\n",new_Floor.Positions.Length)
+			
 			new_Solids := decompose_Room(new_Floor)
 			
 			for n:=0; n<len(new_Solids);n++ {
@@ -135,7 +153,6 @@ func validate(tri []Vector3, leftovers room_Floor) bool{
 	
 	test_A.X, test_A.Y = -test_A.Y,test_A.X //normal
 	if(test_A.Dot(&test_B)>=0){return false} //triangle has invalid wrapping
-	fmt.Printf("--- Proper Wrapping\n")
 	test_A.X, test_A.Y = test_A.Y,-test_A.X //revert
 	
 	//does triangle contain any other points
@@ -160,13 +177,10 @@ func validate(tri []Vector3, leftovers room_Floor) bool{
 		// Check if point is in triangle
 		if(((u >= 0) && (v >= 0) && (u + v < 1))){
 			test_C = dump.Value.(Vector3)
-			fmt.Printf("--- Point in Bounds:\n")
-			fmt.Printf("--- Point: %f %f\n",test_C.X,test_C.Y)
 			return false
 		}
 		dump = dump.Support
 	}
-	fmt.Printf("--- Proper Order\n")
 	return true
 	
 }
@@ -183,18 +197,11 @@ func decompose_Room(target room_Floor) (Triangles []hammer_solid){
 		safety--
 		if(safety<1){break}
 		
-		fmt.Printf("Testing:\n")
-		fmt.Printf("-Point: %f %f\n",nT[0].X,nT[0].Y)
-		fmt.Printf("-Point: %f %f\n",nT[1].X,nT[1].Y)
-		fmt.Printf("-Point: %f %f\n",nT[2].X,nT[2].Y)
-		
 		if(validate(nT,target)){
 			//out ABC
-			fmt.Printf("-Valid\n")
 			Triangles = append(Triangles,hammer_make_floor(nT,float64(target.Elevation),float64(target.Elevation)-32))
 			nT[1] = nT[2]
 		}else{
-			fmt.Printf("-Invalid\n")
 			target.Positions.Append(nT[0])
 			nT[0] = nT[1]
 			nT[1] = nT[2]

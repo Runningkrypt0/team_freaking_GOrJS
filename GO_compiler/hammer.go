@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"os"
 	"strconv"
-	"fmt"
+	//"fmt"
 )
 
 var face_int int = 1000;
@@ -104,7 +104,6 @@ func hammer_fix_solid(solid *hammer_solid){
 			//reverse
 			solid.Faces[i].C.Copy(&element.B)
 			solid.Faces[i].B.Copy(&element.C)
-			fmt.Printf("switch");
 		}
 	}
 	
