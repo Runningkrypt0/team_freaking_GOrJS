@@ -4,20 +4,14 @@ import (
 	"bytes"
 	"os"
 	"strconv"
-	//"fmt"
+	"fmt"
 )
 
 var face_int int = 1000;
 
 func hammer_print_vector(a *Vector3) string{
 	var buffer bytes.Buffer;
-	buffer.WriteString("(");
-	buffer.WriteString(strconv.Itoa(int(a.X)));
-	buffer.WriteString(" ");
-	buffer.WriteString(strconv.Itoa(int(a.Y)));
-	buffer.WriteString(" ");
-	buffer.WriteString(strconv.Itoa(int(a.Z)));
-	buffer.WriteString(")");
+	buffer.WriteString(fmt.Sprintf("(%f %f %f)",a.X,a.Y,a.Z));
 	return buffer.String();
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import(
-	"fmt"
 	"math"
 )
 
@@ -37,7 +36,6 @@ func hammer_make_wall(start *Vector3, end *Vector3, thickness float64) hammer_so
 	dim.X,dim.Y = -dim.Y,dim.X
 	dim.Normalize()
 	dim.Scale(thickness)
-	fmt.Printf(hammer_print_vector(&dim));
 	
 	//8 vectors
 	v_nnn := Vector3{start.X-dim.X/2,start.Y-dim.Y/2,start.Z};

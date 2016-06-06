@@ -153,6 +153,8 @@
 									objects[objects.length-1].height = details[0];
 									objects[objects.length-1].width = details[1];
 									objects[objects.length-1].elevation = details[2];
+									objects[objects.length-1].elevation = details[2];
+									objects[objects.length-1].snap();
 								}
 							}
 							geometry = new THREE.Geometry();
@@ -178,6 +180,7 @@
 									objects[objects.length-1].height = details[0];
 									objects[objects.length-1].width = details[1];
 									objects[objects.length-1].elevation = details[2];
+									objects[objects.length-1].snap();
 								}
 							}
 							state = 0;
@@ -221,7 +224,8 @@
 							objects[objects.length-1].border.dad = objects[objects.length-1];
 							objects[objects.length-1].height = details[0];
 							objects[objects.length-1].width = details[1];
-							objects[objects.length-1].elevation = details[2];;
+							objects[objects.length-1].elevation = details[2];
+							objects[objects.length-1].snap();
 						}
 					}
 					roster.displayEdit();

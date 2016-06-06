@@ -22,10 +22,11 @@ func (a *Vector3)Scale(b float64){
 	a.Z = a.Z*b
 }
 
+func (a *Vector3)Length() float64{
+	return math.Sqrt(a.X*a.X+a.Y*a.Y+a.Z*a.Z)
+}
 func (a *Vector3)Normalize(){
-	distance := math.Sqrt(a.X*a.X+a.Y*a.Y+a.Z*a.Z)
-	a.Divide(distance)
-	
+	a.Divide(a.Length())
 }
 
 func (a *Vector3)Add(b *Vector3){
@@ -38,6 +39,17 @@ func (a *Vector3)Sub(b *Vector3){
 	a.X = a.X - b.X
 	a.Y = a.Y - b.Y
 	a.Z = a.Z - b.Z
+}
+
+func (a *Vector3)Equals(b *Vector3) bool{
+	if(math.Abs(a.X-b.X)<.0001){
+		if(math.Abs(a.Y-b.Y)<.0001){
+			if(math.Abs(a.Z-b.Z)<.0001){
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (a *Vector3)Copy(b *Vector3){
