@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"fmt"
+	"math"
 )
 
 var face_int int = 1000;
@@ -27,6 +28,46 @@ type hammer_face struct{
 	//add smoothing groups (?)
 }
 
+func (me *hammer_face)Normal()(Vector3){
+	A := me.A.Clone()
+	B := me.B.Clone()
+	
+	A.Sub(&me.C)
+	B.Sub(&me.C)
+	
+	Normal := A.Cross(&B)
+	
+	return Normal
+}
+
+func (me *hammer_face)Gen_UV()([]int){
+	UV := make([]int,6)
+	Normal := me.Normal()
+	Xc := math.Abs(Normal.X/Normal.Length())
+	Yc := math.Abs(Normal.Y/Normal.Length())
+	Zc := math.Abs(Normal.Z/Normal.Length())
+	if(Xc>Yc){
+		if(Zc>Xc){
+			//Z
+			UV = []int{1,0,0,0,-1,0}
+		}else{
+			//X
+			UV = []int{0,1,0,0,0,-1}
+		}
+	}else{
+		if(Zc>Yc){
+			//Z
+			UV = []int{1,0,0,0,-1,0}
+		}else{
+			//X
+			UV = []int{1,0,0,0,0,-1}
+		}
+	}
+	
+	
+	return UV
+}
+
 func hammer_write_face(file *os.File, face *hammer_face, id int){
 	//write something about the key value pair
 	file.WriteString(`
@@ -43,22 +84,12 @@ func hammer_write_face(file *os.File, face *hammer_face, id int){
 	file.WriteString(" ");
 	file.WriteString(hammer_print_vector(&face.C));
 	
-	uaxis := face.A.Clone()
-	vaxis := face.B.Clone()
-	uaxis.Sub(&face.B)
-	vaxis.Sub(&face.B)
-	uaxis.Normalize()
-	vaxis.Normalize()
+	UVs := face.Gen_UV();
 	
 	file.WriteString(`"
 			"material" "TOOLS/TOOLSNODRAW"
-			"uaxis" "[`);
-	//file.WriteString(strconv.FormatFloat(float64(uaxis.X), 'f', 2, 32)+" "+strconv.FormatFloat(float64(uaxis.Y), 'f', 2, 32)+" "+strconv.FormatFloat(float64(uaxis.Z), 'f', 2, 32))
-	file.WriteString(`1 0 0 0]0.25"
-			"vaxis" "[`);
-	
-	//file.WriteString(strconv.FormatFloat(float64(vaxis.X), 'f', 2, 32)+" "+strconv.FormatFloat(float64(vaxis.Y), 'f', 2, 32)+" "+strconv.FormatFloat(float64(vaxis.Z), 'f', 2, 32))	
-	file.WriteString(`0 1 0 0]0.25"
+			"uaxis" "[`+strconv.Itoa(UVs[0])+` `+strconv.Itoa(UVs[1])+` `+strconv.Itoa(UVs[2])+` 0] 0.25"
+			"vaxis" "[`+strconv.Itoa(UVs[3])+` `+strconv.Itoa(UVs[4])+` `+strconv.Itoa(UVs[5])+` 0] 0.25"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"

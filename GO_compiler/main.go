@@ -107,6 +107,7 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 						door_refs = append(door_refs, j)
 						
 						doors[j].Side_Edge = append(doors[j].Side_Edge, upper_vec_In)
+						doors[j].Side_Edge = append(doors[j].Side_Edge, lower_vec_In)
 						doors[j].Top_Edge = math.Max(rooms[r_id].Elevation+rooms[r_id].Height,doors[j].Top_Edge)
 						doors[j].Bottom_Edge = math.Min(rooms[r_id].Elevation-16,doors[j].Bottom_Edge)
 						
@@ -189,13 +190,59 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 		hammer_fix_solid(&door_head)
 		my_world.Solids = append(my_world.Solids, door_head);
 		
-		Left_Arm_Border := []Vector3{doors[d_id].Border[1],doors[d_id].Side_Edge[0],doors[d_id].Border[2]}
+		Left_Arm_Border := make([]Vector3,0)
+		Left_Arm_Vector_A := doors[d_id].Side_Edge[0].Clone()
+		Left_Arm_Vector_B := doors[d_id].Side_Edge[3].Clone()
+		Left_Arm_Vector_A.Sub(&doors[d_id].Border[1])
+		Left_Arm_Vector_B.Sub(&doors[d_id].Border[2])
+		Left_Ratio := Left_Arm_Vector_A.Length()/Left_Arm_Vector_B.Length()
+		
+		if(Left_Ratio==1){
+			Left_Arm_Border = append(Left_Arm_Border, doors[d_id].Border[1], doors[d_id].Side_Edge[0], doors[d_id].Border[2])
+		}else{
+			if(Left_Ratio<1){
+				Left_Arm_Vector_B.Scale(Left_Ratio)
+				Left_Arm_Vector_A.Add(&doors[d_id].Border[1])
+				Left_Arm_Vector_B.Add(&doors[d_id].Border[2])
+				Left_Arm_Border = append(Left_Arm_Border, doors[d_id].Border[1], Left_Arm_Vector_A, Left_Arm_Vector_B, doors[d_id].Border[2])
+			}else{
+				Left_Arm_Vector_A.Divide(Left_Ratio)
+				Left_Arm_Vector_A.Add(&doors[d_id].Border[1])
+				Left_Arm_Vector_B.Add(&doors[d_id].Border[2])
+				Left_Arm_Border = append(Left_Arm_Border, doors[d_id].Border[1], Left_Arm_Vector_A, Left_Arm_Vector_B, doors[d_id].Border[2])
+			}
+		}
+		
 		Left_Arm := hammer_make_floor(Left_Arm_Border,doors[d_id].Position.Z+doors[d_id].Base+doors[d_id].Height,doors[d_id].Position.Z+doors[d_id].Base)
 		
 		hammer_fix_solid(&Left_Arm)
 		my_world.Solids = append(my_world.Solids, Left_Arm);
 		
-		Right_Arm_Border := []Vector3{doors[d_id].Border[3],doors[d_id].Side_Edge[1],doors[d_id].Border[0]}
+		
+		
+		Right_Arm_Border := make([]Vector3,0)
+		Right_Arm_Vector_A := doors[d_id].Side_Edge[2].Clone()
+		Right_Arm_Vector_B := doors[d_id].Side_Edge[1].Clone()
+		Right_Arm_Vector_A.Sub(&doors[d_id].Border[3])
+		Right_Arm_Vector_B.Sub(&doors[d_id].Border[0])
+		Right_Ratio := Right_Arm_Vector_A.Length()/Right_Arm_Vector_B.Length()
+		
+		if(Right_Ratio==1){
+			Right_Arm_Border = append(Right_Arm_Border, doors[d_id].Border[3], doors[d_id].Side_Edge[1], doors[d_id].Border[0])
+		}else{
+			if(Right_Ratio<1){
+				Right_Arm_Vector_B.Scale(Right_Ratio)
+				Right_Arm_Vector_A.Add(&doors[d_id].Border[3])
+				Right_Arm_Vector_B.Add(&doors[d_id].Border[0])
+				Right_Arm_Border = append(Right_Arm_Border, doors[d_id].Border[3], Right_Arm_Vector_A, Right_Arm_Vector_B, doors[d_id].Border[0])
+			}else{
+				Right_Arm_Vector_A.Divide(Right_Ratio)
+				Right_Arm_Vector_A.Add(&doors[d_id].Border[3])
+				Right_Arm_Vector_B.Add(&doors[d_id].Border[0])
+				Right_Arm_Border = append(Right_Arm_Border, doors[d_id].Border[3], Right_Arm_Vector_A, Right_Arm_Vector_B, doors[d_id].Border[0])
+			}
+		}
+		
 		Right_Arm := hammer_make_floor(Right_Arm_Border,doors[d_id].Position.Z+doors[d_id].Base+doors[d_id].Height,doors[d_id].Position.Z+doors[d_id].Base)
 		
 		hammer_fix_solid(&Right_Arm)
