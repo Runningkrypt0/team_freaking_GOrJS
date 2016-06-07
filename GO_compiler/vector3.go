@@ -25,6 +25,7 @@ func (a *Vector3)Scale(b float64){
 func (a *Vector3)Length() float64{
 	return math.Sqrt(a.X*a.X+a.Y*a.Y+a.Z*a.Z)
 }
+
 func (a *Vector3)Normalize(){
 	a.Divide(a.Length())
 }

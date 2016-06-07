@@ -27,7 +27,6 @@ type hammer_face struct{
 	//add smoothing groups (?)
 }
 
-
 func hammer_write_face(file *os.File, face *hammer_face, id int){
 	//write something about the key value pair
 	file.WriteString(`

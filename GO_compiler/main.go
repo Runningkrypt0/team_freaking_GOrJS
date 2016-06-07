@@ -6,6 +6,7 @@ import(
 	"fmt"
 	"log"
 	"strconv"
+	"math"
 )
 
 var fileName string;
@@ -53,6 +54,7 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 		
 		//first insert door alcoves into holder
 		door_marks := make([]int,0)
+		
 		door_refs := make([]int,0)
 		door_holder := make([]Vector3,0)
 		
@@ -74,29 +76,21 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 				test_vector_A.Z = 0
 				
 				
-				//if(doors[j].Position.Z<rooms[r_id].Elevation||doors[j].Position.Z>rooms[r_id].Elevation+rooms[r_id].Height){continue}
+				if(doors[j].Position.Z<rooms[r_id].Elevation||doors[j].Position.Z>rooms[r_id].Elevation+rooms[r_id].Height){continue}
 				test_vector_B := doors[j].Position.Clone()
 				test_vector_B.Sub(&holder[i])
 				test_vector_B.Z = 0 //need to check if door is in room height range
 				ratio := (test_vector_B.Length()/test_vector_A.Length())
-				//fmt.Printf("\n")
-				//fmt.Printf("-Length Ratio: %f\n",test_vector_B.Length()/test_vector_A.Length())
 				if(ratio<1&&ratio>0){
 					
 					test_vector_A.Normalize()
 					test_vector_B.Normalize()
-					//fmt.Printf("-Dir A: %f %f %f\n",test_vector_A.X,test_vector_A.Y,test_vector_A.Z)
-					//fmt.Printf("-Dir B: %f %f %f\n",test_vector_B.X,test_vector_B.Y,test_vector_B.Z)
 					if(test_vector_A.Dot(&test_vector_B)>.99){
-						fmt.Printf("-A: %f %f %f\n",holder[i].X,holder[i].Y,holder[i].Z)
-						fmt.Printf("-D: %f %f %f\n",doors[j].Position.X,doors[j].Position.Y,doors[j].Position.Z)
-						//fmt.Printf("-B: %f %f %f\n",holder[i+1].X,holder[i+1].Y,holder[i+1].Z)
 					
 						test_vector_A.Scale(doors[j].Width/2+rooms[r_id].Width)
 						
 						upper_vec_In := doors[j].Position.Clone()
 						upper_vec_In.Z = rooms[r_id].Elevation
-						fmt.Printf("-Dir B: %f %f %f\n",upper_vec_In.X,upper_vec_In.Y,upper_vec_In.Z)
 						lower_vec_In := doors[j].Position.Clone()
 						lower_vec_In.Z = rooms[r_id].Elevation
 						upper_vec_In.Add(&test_vector_A)
@@ -111,12 +105,15 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 						fmt.Printf("-low in: %f %f %f\n",lower_vec_In.X,lower_vec_In.Y,lower_vec_In.Z)
 						door_marks = append(door_marks, len(door_holder))
 						door_refs = append(door_refs, j)
+						
+						doors[j].Side_Edge = append(doors[j].Side_Edge, upper_vec_In)
+						doors[j].Top_Edge = math.Max(rooms[r_id].Elevation+rooms[r_id].Height,doors[j].Top_Edge)
+						doors[j].Bottom_Edge = math.Min(rooms[r_id].Elevation-16,doors[j].Bottom_Edge)
+						
 						door_holder = append(door_holder,lower_vec_In)
 						door_holder = append(door_holder,lower_vec_Out)
 						door_holder = append(door_holder,upper_vec_Out)
 						door_holder = append(door_holder,upper_vec_In)
-						
-						fmt.Printf("relevant \n")
 						
 					}
 				}
@@ -124,14 +121,6 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 			
 			
 			
-		}
-		fmt.Printf("--Norm--\n")
-		for i:=0;i<len(holder);i++{
-			fmt.Printf(hammer_print_vector(&holder[i])+"\n")
-		}
-		fmt.Printf("--DOOR--\n")
-		for i:=0;i<len(door_holder);i++{
-			fmt.Printf(hammer_print_vector(&door_holder[i])+"\n")
 		}
 		inset_doors := inset(door_holder, rooms[r_id].Width)
 		
@@ -146,22 +135,9 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 			}
 			
 			if(skip>=0){
-				//make door floor chunk
-				door_vecs := make([]Vector3,4)
-				door_vecs[0] = door_holder[i]
-				door_vecs[1] = inset_doors[i]
-				door_vecs[2] = inset_doors[i+3]
-				door_vecs[3] = door_holder[i+3]
-				wall_solid := hammer_solid{}
-				if(doors[door_refs[skip]].Position.Z>rooms[r_id].Elevation){
-					wall_solid = hammer_make_floor(door_vecs,doors[door_refs[skip]].Position.Z,rooms[r_id].Elevation)
-				}else{
-					wall_solid = hammer_make_floor(door_vecs,rooms[r_id].Elevation,rooms[r_id].Elevation-32)
+				if(i<len(inset_doors)-1){
+					doors[door_refs[skip]].Border = append(doors[door_refs[skip]].Border, inset_doors[i],inset_doors[int(math.Mod(float64(i+3),float64(len(inset_doors))))])
 				}
-				
-				hammer_fix_solid(&wall_solid)
-				my_world.Solids = append(my_world.Solids, wall_solid)
-			
 				i = i+2
 				continue
 			}
@@ -186,18 +162,53 @@ func make_Stuff(rooms []room_Floor, doors []room_Door){
 		
 
 		
-		new_Solids := decompose_Room(rooms[r_id])
-		for n:=0; n<len(new_Solids);n++ {
-			hammer_fix_solid(&new_Solids[n])
-			my_world.Solids = append(my_world.Solids, new_Solids[n]);
+		floor_Solids := decompose_Floor(rooms[r_id].Insets,rooms[r_id].Elevation,rooms[r_id].Elevation-16)
+		ceiling_Solids := decompose_Floor(rooms[r_id].Insets,rooms[r_id].Elevation+rooms[r_id].Height+16,rooms[r_id].Elevation+rooms[r_id].Height)
+		for n:=0; n<len(floor_Solids);n++ {
+			hammer_fix_solid(&floor_Solids[n])
+			my_world.Solids = append(my_world.Solids, floor_Solids[n]);
+		}
+		for n:=0; n<len(ceiling_Solids);n++ {
+			hammer_fix_solid(&ceiling_Solids[n])
+			my_world.Solids = append(my_world.Solids, ceiling_Solids[n]);
 		}
 	
 	}
+	
+	//now create door frames
+	
+	for d_id:=0;d_id<len(doors);d_id++ {
+	
+		door_foot := hammer_make_floor(doors[d_id].Border,doors[d_id].Position.Z+doors[d_id].Base,doors[d_id].Bottom_Edge)
+		
+		hammer_fix_solid(&door_foot)
+		my_world.Solids = append(my_world.Solids, door_foot);
+		
+		door_head := hammer_make_floor(doors[d_id].Border,doors[d_id].Position.Z+doors[d_id].Base+doors[d_id].Height,doors[d_id].Top_Edge)
+		
+		hammer_fix_solid(&door_head)
+		my_world.Solids = append(my_world.Solids, door_head);
+		
+		Left_Arm_Border := []Vector3{doors[d_id].Border[1],doors[d_id].Side_Edge[0],doors[d_id].Border[2]}
+		Left_Arm := hammer_make_floor(Left_Arm_Border,doors[d_id].Position.Z+doors[d_id].Base+doors[d_id].Height,doors[d_id].Position.Z+doors[d_id].Base)
+		
+		hammer_fix_solid(&Left_Arm)
+		my_world.Solids = append(my_world.Solids, Left_Arm);
+		
+		Right_Arm_Border := []Vector3{doors[d_id].Border[3],doors[d_id].Side_Edge[1],doors[d_id].Border[0]}
+		Right_Arm := hammer_make_floor(Right_Arm_Border,doors[d_id].Position.Z+doors[d_id].Base+doors[d_id].Height,doors[d_id].Position.Z+doors[d_id].Base)
+		
+		hammer_fix_solid(&Right_Arm)
+		my_world.Solids = append(my_world.Solids, Right_Arm);
+	}
+	
+	
 	
 	hammer_write_world(f,&my_world);
 	f.Close()
 	
 }
+
 func read_Stuff(file *os.File) (ROOMS []room_Floor, DOORS []room_Door){
 	var pos int = 0;
 	var data []byte;
@@ -238,9 +249,9 @@ func read_Stuff(file *os.File) (ROOMS []room_Floor, DOORS []room_Door){
 			}
 			ROOMS = append(ROOMS,new_Floor)
 			
-			fmt.Printf("-H: %d ",new_Floor.Height)
-			fmt.Printf("-W: %d ",new_Floor.Width)
-			fmt.Printf("-E: %d\n",new_Floor.Elevation)
+			fmt.Printf("-H: %f ",new_Floor.Height)
+			fmt.Printf("-W: %f ",new_Floor.Width)
+			fmt.Printf("-E: %f\n",new_Floor.Elevation)
 			
 		}else if(temp=="D"){
 			fmt.Printf("New Door:\n")
@@ -265,9 +276,13 @@ func read_Stuff(file *os.File) (ROOMS []room_Floor, DOORS []room_Door){
 			temp = string(data[:len(data)-1])
 			new_Door.Base,_ = strconv.ParseFloat(temp,64)
 			
-			fmt.Printf("-H: %d ",new_Door.Height)
-			fmt.Printf("-W: %d ",new_Door.Width)
-			fmt.Printf("-B: %d\n",new_Door.Base)
+			new_Door.Bottom_Edge = 1000000
+			new_Door.Top_Edge = -1000000
+			
+			
+			fmt.Printf("-H: %f ",new_Door.Height)
+			fmt.Printf("-W: %f ",new_Door.Width)
+			fmt.Printf("-B: %f\n",new_Door.Base)
 			
 			DOORS = append(DOORS,new_Door)
 		}
@@ -338,8 +353,7 @@ func validate_Hull(hull []Vector3, test_point *Vector3) (score int){
 	return
 }
 
-
-func validate(tri []Vector3, leftovers room_Floor) bool{
+func validate(tri []Vector3, leftovers Stack) bool{
 	test_A := tri[0].Clone()
 	test_B := tri[2].Clone()
 	test_A.Sub(&tri[1])
@@ -356,7 +370,7 @@ func validate(tri []Vector3, leftovers room_Floor) bool{
 	
 	//does triangle contain any other points
 	
-	dump := leftovers.Positions.Top
+	dump := leftovers.Top
 	for dump!=nil {
 		//is point in triangle
 		temp := dump.Value.(Vector3)
@@ -381,11 +395,11 @@ func validate(tri []Vector3, leftovers room_Floor) bool{
 	
 }
 
-func decompose_Room(target room_Floor) (Solids []hammer_solid){
+func decompose_Floor(target Stack, bottom float64, top float64) (Solids []hammer_solid){
 	nT := make([]Vector3,3)
-	nT[0] = target.Insets.Pop().(Vector3)
-	nT[1] = target.Insets.Pop().(Vector3)
-	nT[2] = target.Insets.Pop().(Vector3)
+	nT[0] = target.Pop().(Vector3)
+	nT[1] = target.Pop().(Vector3)
+	nT[2] = target.Pop().(Vector3)
 	Triangles := make([]([]Vector3),0)
 	safety := 300
 	
@@ -401,14 +415,14 @@ func decompose_Room(target room_Floor) (Solids []hammer_solid){
 			
 			nT[1] = nT[2]
 		}else{
-			target.Insets.Append(nT[0])
+			target.Append(nT[0])
 			nT[0] = nT[1]
 			nT[1] = nT[2]
 		}
-		if(target.Insets.Length<1){
+		if(target.Length<1){
 			break
 		}
-		nT[2] = target.Insets.Pop().(Vector3)
+		nT[2] = target.Pop().(Vector3)
 	}
 	
 	//now to do some magic and combine a bunch of triangles...
@@ -560,7 +574,7 @@ func decompose_Room(target room_Floor) (Solids []hammer_solid){
 
 	
 	for i:=0;i<len(shapes);i++{
-		Solids = append(Solids,hammer_make_floor(shapes[i],float64(target.Elevation),float64(target.Elevation)-32))
+		Solids = append(Solids,hammer_make_floor(shapes[i],top,bottom))
 	}
 	return
 }
@@ -569,7 +583,11 @@ type room_Door struct{
 	Position Vector3;
 	Height float64;
 	Base float64;
+	Top_Edge float64
+	Bottom_Edge float64
 	Width float64;
+	Border []Vector3;
+	Side_Edge []Vector3;
 }
 
 func main() {
